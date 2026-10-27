@@ -99,10 +99,10 @@
 
                 <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Email</label>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">ID Pengguna (User ID)</label>
                         <div class="relative">
                             <i class="fa-solid fa-user absolute left-3 top-3.5 text-slate-400 text-sm"></i>
-                            <input type="email" id="loginEmail" required autocomplete="username" class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm" placeholder="nama@perusahaan.com">
+                            <input type="text" id="loginId" required autocomplete="username" class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm" placeholder="Masukkan User ID">
                         </div>
                     </div>
                     <div>
@@ -296,6 +296,7 @@
     <script>
         const SUPABASE_URL = 'https://sswmkdkwqpfuvzkpwqis.supabase.co';
         const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_nQ7j19qZ-Zq1MXFRd-vPBw_rwm2a7YZ';
+        const AUTH_LOGIN_DOMAIN = 'sswmkdkwqpfuvzkpwqis.supabase.co';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
         let currentUser = null;
@@ -323,11 +324,16 @@
 
         async function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value.trim();
+            const userId = document.getElementById('loginId').value.trim().toLowerCase();
             const password = document.getElementById('loginPassword').value;
+            if (!/^[a-z0-9._-]+$/.test(userId)) {
+                showToast('User ID hanya boleh berisi huruf, angka, titik, garis bawah, atau tanda hubung.', 'error');
+                return;
+            }
+            const email = `${userId}@${AUTH_LOGIN_DOMAIN}`;
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) {
-                showToast('Email atau kata sandi tidak valid.', 'error');
+                showToast('User ID atau kata sandi tidak valid.', 'error');
                 return;
             }
             await checkSession();

@@ -1,6 +1,7 @@
 -- Run this once in the Supabase SQL Editor.
 -- Create Auth users in Supabase Dashboard > Authentication > Users first.
--- Then insert one profile row for each Auth user (example at the end).
+-- Use the internal email alias USERID@sswmkdkwqpfuvzkpwqis.supabase.co.
+-- Users enter only their User ID and password in the app; they never enter this alias.
 
 create table if not exists public.profiles (
     user_id uuid primary key references auth.users (id) on delete cascade,
@@ -109,12 +110,29 @@ $$;
 revoke all on function public.replace_work_schedules(jsonb) from public;
 grant execute on function public.replace_work_schedules(jsonb) to authenticated;
 
--- Provision each person in this order:
--- 1. Create their email/password account in Supabase Dashboard > Authentication > Users.
--- 2. Run an insert below, replacing the email and names.
--- 3. Use SUPER_ADMIN for the single system administrator, ADMIN_OPS for schedule editors,
---    and VIEWER for read-only accounts.
---
--- insert into public.profiles (user_id, login_name, display_name, employee_name, role)
--- select id, email, 'Nama User', 'Nama Karyawan di Excel', 'VIEWER'
--- from auth.users where email = 'user@example.com';
+-- Create these Auth users first in Supabase Dashboard > Authentication > Users.
+-- Each email is <user_id>@sswmkdkwqpfuvzkpwqis.supabase.co; set a password and
+-- mark the email as confirmed. Users enter only the User ID and password in the app.
+-- Then run the seed below. Ahmad is the single SUPER_ADMIN; Nenden and Pak Adi
+-- can edit schedules. The other employee accounts are read-only VIEWERs.
+insert into public.profiles (user_id, login_name, display_name, employee_name, role)
+select auth_user.id, seed.login_name, seed.display_name, seed.employee_name, seed.role
+from (values
+    ('rezarizali', 'REZA RIZALI', 'REZA RIZALI', 'VIEWER'),
+    ('ahmadsholehsholahudin', 'AHMAD SHOLEH SHOLAHUDIN', 'AHMAD SHOLEH SHOLAHUDIN', 'SUPER_ADMIN'),
+    ('wilihidayat', 'WILI HIDAYAT', 'WILI HIDAYAT', 'VIEWER'),
+    ('agungwijaya', 'AGUNG WIJAYA', 'AGUNG WIJAYA', 'VIEWER'),
+    ('megarifasaputra', 'MEGA RIFA SAPUTRA', 'MEGA RIFA SAPUTRA', 'VIEWER'),
+    ('riobercovmartin', 'RIO BERCOV MARTIN', 'RIO BERCOV MARTIN', 'VIEWER'),
+    ('reivaazzahra', 'REIVA AZZAHRA', 'REIVA AZZAHRA', 'VIEWER'),
+    ('sofyanmaulanahidayat', 'SOFYAN MAULANA HIDAYAT', 'SOFYAN MAULANA HIDAYAT', 'VIEWER'),
+    ('nenden', 'Nenden', null, 'ADMIN_OPS'),
+    ('pakadi', 'Pak Adi', null, 'ADMIN_OPS')
+) as seed(login_name, display_name, employee_name, role)
+join auth.users as auth_user
+    on lower(auth_user.email) = lower(seed.login_name || '@sswmkdkwqpfuvzkpwqis.supabase.co')
+on conflict (user_id) do update set
+    login_name = excluded.login_name,
+    display_name = excluded.display_name,
+    employee_name = excluded.employee_name,
+    role = excluded.role;
