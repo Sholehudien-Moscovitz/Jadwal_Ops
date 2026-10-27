@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShiftSync Pro - Operasional Edition</title>
+    <title>Jadwal Kerja</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -93,8 +93,7 @@
                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 mb-3 shadow-inner">
                         <i class="fa-solid fa-industry text-3xl"></i>
                     </div>
-                    <h1 class="text-2xl font-bold tracking-tight text-white">ShiftSync Pro</h1>
-                    <p class="text-xs text-indigo-300 tracking-widest uppercase font-semibold mt-1">Divisi Operasional System</p>
+                    <h1 class="text-2xl font-bold tracking-tight text-white">Jadwal Kerja</h1>
                 </div>
 
                 <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
@@ -158,8 +157,7 @@
                         </div>
                         <div>
                             <div class="flex items-center gap-2">
-                                <h2 class="font-bold text-lg text-white tracking-tight">ShiftSync Pro</h2>
-                                <span class="text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">DIVISI OPERASIONAL</span>
+                                <h2 class="font-bold text-lg text-white tracking-tight">Jadwal Kerja</h2>
                             </div>
                             <p class="text-[11px] text-slate-400 font-mono hidden sm:block" id="liveClock">WIB: --:--:--</p>
                         </div>
@@ -180,11 +178,8 @@
             <!-- NAVIGATION TABS -->
             <nav class="bg-slate-900/80 border-b border-slate-800/80 px-4 sm:px-8">
                 <div class="max-w-7xl mx-auto flex space-x-1 sm:space-x-2 overflow-x-auto py-2" id="navTabs">
-                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition bg-indigo-600 text-white">
-                        <i class="fa-solid fa-chart-pie"></i> Ringkasan Tim
-                    </button>
-                    <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 flex items-center gap-2 transition">
-                        <i class="fa-solid fa-calendar-days"></i> Jadwal Operasional (Highlight User)
+                    <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition bg-indigo-600 text-white">
+                        <i class="fa-solid fa-calendar-days"></i> Jadwal Kerja
                     </button>
                     <button onclick="switchTab('excel')" id="tab-excel" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 flex items-center gap-2 transition">
                         <i class="fa-solid fa-file-excel text-emerald-400"></i> Import Template Excel
@@ -204,69 +199,12 @@
             <!-- MAIN CONTENT AREA -->
             <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
 
-                <!-- 1. DASHBOARD VIEW -->
-                <section id="view-dashboard" class="tab-content space-y-6">
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <div class="glass p-4 rounded-2xl border-l-4 border-indigo-500">
-                            <div class="text-xs text-slate-400 font-medium mb-1">Total Personil Ops</div>
-                            <div class="text-2xl font-bold text-white font-mono" id="statTotalStaff">0</div>
-                            <div class="text-[10px] text-indigo-400 mt-1"><i class="fa-solid fa-users"></i> Divisi Operasional</div>
-                        </div>
-                        <div class="glass p-4 rounded-2xl border-l-4 border-emerald-500">
-                            <div class="text-xs text-slate-400 font-medium mb-1">Total Rekap Masuk</div>
-                            <div class="text-2xl font-bold text-emerald-400 font-mono" id="statDutyToday">0</div>
-                            <div class="text-[10px] text-slate-400 mt-1">Akumulasi Periode 21-20</div>
-                        </div>
-                        <div class="glass p-4 rounded-2xl border-l-4 border-amber-500">
-                            <div class="text-xs text-slate-400 font-medium mb-1">Shift Pagi</div>
-                            <div class="text-2xl font-bold text-amber-400 font-mono" id="statMorningShift">0</div>
-                            <div class="text-[10px] text-slate-400 mt-1">08:00 / 09:00 / 08-17</div>
-                        </div>
-                        <div class="glass p-4 rounded-2xl border-l-4 border-blue-500">
-                            <div class="text-xs text-slate-400 font-medium mb-1">Shift Siang / Middle</div>
-                            <div class="text-2xl font-bold text-blue-400 font-mono" id="statNightShift">0</div>
-                            <div class="text-[10px] text-slate-400 mt-1">Middle & Siang Sesi</div>
-                        </div>
-                        <div class="glass p-4 rounded-2xl border-l-4 border-rose-500">
-                            <div class="text-xs text-slate-400 font-medium mb-1">Libur / Off</div>
-                            <div class="text-2xl font-bold text-rose-400 font-mono" id="statOffDuty">0</div>
-                            <div class="text-[10px] text-slate-400 mt-1">Off Shift Operasional</div>
-                        </div>
-                    </div>
-
-                    <div class="glass p-5 rounded-2xl space-y-4">
-                        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
-                            <h3 class="font-bold text-base text-white flex items-center gap-2">
-                                <i class="fa-solid fa-list-check text-indigo-400"></i> Ringkasan Rekapitulasi Tim (Periode Tgl 21 - 20)
-                            </h3>
-                            <span class="text-xs bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg font-mono">Periode Aktif</span>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead>
-                                    <tr class="border-b border-slate-800 text-slate-400">
-                                        <th class="py-2.5 px-3">Nama Karyawan (Kolom A)</th>
-                                        <th class="py-2.5 px-3 text-center">Total Masuk</th>
-                                        <th class="py-2.5 px-3 text-center">Libur (OFF)</th>
-                                        <th class="py-2.5 px-3 text-center">Shift Pagi</th>
-                                        <th class="py-2.5 px-3 text-center">Shift Middle</th>
-                                        <th class="py-2.5 px-3 text-center">Shift Siang</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="todayShiftTable" class="divide-y divide-slate-800/50">
-                                    <!-- Dynamic JS Insertion -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 2. JADWAL OPERASIONAL VIEW (HIGHLIGHT USER AKTIF) -->
-                <section id="view-schedule" class="tab-content hidden space-y-4">
+                <!-- JADWAL KERJA -->
+                <section id="view-schedule" class="tab-content space-y-4">
                     <div class="glass p-4 sm:p-6 rounded-2xl space-y-4">
                         <div class="flex flex-col md:flex-row gap-3 items-center justify-between border-b border-slate-800 pb-4">
                             <div>
-                                <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-user-check text-indigo-400 mr-2"></i> Jadwal Operasional & Highlight Akun Anda</h3>
+                                <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-user-check text-indigo-400 mr-2"></i> Jadwal Kerja</h3>
                                 <p class="text-xs text-slate-400 mt-0.5">Baris dengan nama Anda akan disorot terang. Jadwal rekan tim lain ditampilkan samar.</p>
                             </div>
                             <div class="flex items-center gap-2 w-full md:w-auto justify-end">
@@ -476,12 +414,11 @@
             document.getElementById('userBadgeRole').innerText = currentUser.badge;
 
             applyRBACPermissions();
-            renderDashboard();
             renderScheduleTable();
             renderUsersTable();
             renderLogsTable();
             generateSQLQuery();
-            switchTab('dashboard');
+            switchTab('schedule');
         }
 
         function applyRBACPermissions() {
@@ -508,49 +445,6 @@
                 activeTabBtn.classList.add('bg-indigo-600', 'text-white');
                 activeTabBtn.classList.remove('text-slate-400');
             }
-        }
-
-        function renderDashboard() {
-            const totalStaff = scheduleSummaries.length;
-            let totalDuty = 0, totalPagi = 0, totalMiddle = 0, totalSiang = 0, totalOff = 0;
-
-            scheduleSummaries.forEach(s => {
-                totalPagi += s.pagi;
-                totalMiddle += s.middle;
-                totalSiang += s.siang;
-                totalOff += s.libur;
-                totalDuty += s.masuk;
-            });
-
-            document.getElementById('statTotalStaff').innerText = totalStaff;
-            document.getElementById('statDutyToday').innerText = totalDuty;
-            document.getElementById('statMorningShift').innerText = totalPagi;
-            document.getElementById('statNightShift').innerText = totalMiddle + totalSiang;
-            document.getElementById('statOffDuty').innerText = totalOff;
-
-            const tbody = document.getElementById('todayShiftTable');
-            tbody.innerHTML = '';
-
-            if (scheduleSummaries.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">Belum ada template Excel yang diunggah. Silakan import melalui menu Import Excel.</td></tr>`;
-                return;
-            }
-
-            scheduleSummaries.forEach(item => {
-                const isMyData = currentUser && item.name.toLowerCase().includes(currentUser.name.toLowerCase());
-                const rowStyle = isMyData ? 'bg-indigo-600/25 font-bold text-white border-l-4 border-indigo-500' : 'opacity-40 text-slate-400';
-
-                tbody.innerHTML += `
-                    <tr class="transition ${rowStyle}">
-                        <td class="py-2.5 px-3">${item.name} ${isMyData ? '<span class="ml-2 text-[10px] bg-indigo-500 text-white px-1.5 py-0.5 rounded">ANDA</span>' : ''}</td>
-                        <td class="py-2.5 px-3 text-center font-mono">${item.masuk}</td>
-                        <td class="py-2.5 px-3 text-center font-mono">${item.libur}</td>
-                        <td class="py-2.5 px-3 text-center font-mono">${item.pagi}</td>
-                        <td class="py-2.5 px-3 text-center font-mono">${item.middle}</td>
-                        <td class="py-2.5 px-3 text-center font-mono">${item.siang}</td>
-                    </tr>
-                `;
-            });
         }
 
         function renderScheduleTable() {
@@ -651,10 +545,9 @@
                     addLog(`Import Sheet '${targetSheetName}' Berhasil (${scheduleSummaries.length} Karyawan)`);
                     showToast(`Berhasil membaca Sheet: "${targetSheetName}" (${scheduleSummaries.length} Karyawan)`, 'success');
                     
-                    renderDashboard();
                     renderScheduleTable();
                     generateSQLQuery();
-                    switchTab('dashboard');
+                    switchTab('schedule');
                 } catch (err) {
                     console.error(err);
                     showToast('Gagal memproses file Excel!', 'error');
@@ -664,7 +557,7 @@
         }
 
         function generateSQLQuery() {
-            let sql = `-- ShiftSync Pro: DBeaver SQL Script\n`;
+            let sql = `-- Jadwal Kerja: DBeaver SQL Script\n`;
             if (scheduleSummaries.length > 0) {
                 sql += `INSERT INTO operational_shift_summary (nama_karyawan, total_masuk, total_libur, shift_pagi, shift_middle, shift_siang) VALUES\n`;
                 const rows = scheduleSummaries.map(s => `('${s.name.replace(/'/g, "''")}', ${s.masuk}, ${s.libur}, ${s.pagi}, ${s.middle}, ${s.siang})`);
