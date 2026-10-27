@@ -205,7 +205,7 @@
                         <div class="flex flex-col md:flex-row gap-3 items-center justify-between border-b border-slate-800 pb-4">
                             <div>
                                 <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-user-check text-indigo-400 mr-2"></i> Jadwal Kerja</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Baris dengan nama Anda akan disorot terang. Jadwal rekan tim lain ditampilkan samar.</p>
+                                <p class="text-xs text-slate-400 mt-0.5">Jadwal per tanggal dan hari. Panjang blok menunjukkan rentang jam kerja (WIB).</p>
                             </div>
                             <div class="flex items-center gap-2 w-full md:w-auto justify-end">
                                 <div class="relative w-full sm:w-64">
@@ -216,21 +216,9 @@
                         </div>
 
                         <div class="overflow-x-auto rounded-xl border border-slate-800">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-900/90 text-slate-300 uppercase tracking-wider font-semibold border-b border-slate-800">
-                                    <tr>
-                                        <th class="py-3 px-4">Nama Karyawan</th>
-                                        <th class="py-3 px-4 text-center">Total Masuk</th>
-                                        <th class="py-3 px-4 text-center">Libur (OFF)</th>
-                                        <th class="py-3 px-4 text-center">Shift Pagi</th>
-                                        <th class="py-3 px-4 text-center">Shift Middle</th>
-                                        <th class="py-3 px-4 text-center">Shift Siang</th>
-                                        <th class="py-3 px-4 text-center">Status Tampilan</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="scheduleTableBody" class="divide-y divide-slate-800/60">
-                                    <!-- Dynamic rows -->
-                                </tbody>
+                            <table class="w-full min-w-max text-left text-xs">
+                                <thead id="scheduleTableHead" class="bg-slate-900/90 text-slate-300 border-b border-slate-800"></thead>
+                                <tbody id="scheduleTableBody" class="divide-y divide-slate-800/60"></tbody>
                             </table>
                         </div>
                     </div>
@@ -346,6 +334,7 @@
 
         let currentUser = null;
         let scheduleSummaries = JSON.parse(localStorage.getItem('shiftsync_ops_summaries')) || [];
+        let dailyScheduleData = JSON.parse(localStorage.getItem('shiftsync_ops_daily_schedule')) || { employees: [], entries: [] };
         let systemLogs = JSON.parse(localStorage.getItem('shiftsync_ops_logs')) || [
             { time: new Date().toLocaleString('id-ID'), user: 'System', action: 'Inisialisasi Sistem' }
         ];
@@ -447,42 +436,250 @@
             }
         }
 
+        function escapeHTML(value) {
+            return String(value).replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[character]);
+        }
+
         function renderScheduleTable() {
+            const thead = document.getElementById('scheduleTableHead');
             const tbody = document.getElementById('scheduleTableBody');
-            const search = document.getElementById('searchStaff').value.toLowerCase();
+            const search = document.getElementById('searchStaff').value.trim().toLowerCase();
+            const entries = dailyScheduleData.entries || [];
+            const employees = (dailyScheduleData.employees || []).filter(name => name.toLowerCase().includes(search));
+            const dateKeys = [...new Set(entries.map(entry => entry.date))].sort();
+
+            thead.innerHTML = '';
             tbody.innerHTML = '';
-
-            const filtered = scheduleSummaries.filter(item => item.name.toLowerCase().includes(search));
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">Tidak ada data rekapitulasi jadwal ditemukan.</td></tr>`;
+            if (dateKeys.length === 0) {
+                const message = scheduleSummaries.length
+                    ? 'Jadwal lama hanya menyimpan rekap. Impor ulang file Excel untuk menampilkan jadwal per tanggal.'
+                    : 'Belum ada jadwal. Impor template Excel untuk menampilkan jadwal per tanggal.';
+                tbody.innerHTML = `<tr><td colspan="2" class="py-8 px-4 text-center text-slate-400">${message}</td></tr>`;
                 return;
             }
 
-            filtered.forEach(item => {
-                const isMyData = currentUser && (item.name.toLowerCase().includes(currentUser.name.toLowerCase()) || currentUser.name.toLowerCase().includes(item.name.toLowerCase()));
-                
-                const rowClass = isMyData 
-                    ? 'bg-indigo-600/25 border-l-4 border-indigo-500 text-white font-bold' 
-                    : 'opacity-30 text-slate-500 bg-slate-900/20';
+            const dayHeaders = dateKeys.map(dateKey => {
+                const date = new Date(`${dateKey}T00:00:00`);
+                const dayName = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(date);
+                const dateLabel = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short' }).format(date);
+                const dayEntries = entries.filter(entry => entry.date === dateKey && !entry.off);
+                const counts = {
+                    pagi: dayEntries.filter(entry => entry.shift === 'Pagi').length,
+                    middle: dayEntries.filter(entry => entry.shift === 'Middle').length,
+                    siang: dayEntries.filter(entry => entry.shift === 'Siang').length
+                };
+                return `<th class="min-w-[220px] border-l border-slate-700/70 px-3 pt-3 pb-2 text-left align-top">
+                    <div class="font-bold capitalize text-white">${dayName}</div>
+                    <div class="text-sm font-semibold text-slate-200">${dateLabel}</div>
+                    <div class="mt-1 flex flex-wrap gap-x-2 text-[10px] normal-case">
+                        <span class="text-amber-300">Pagi ${counts.pagi}</span>
+                        <span class="text-sky-300">Middle ${counts.middle}</span>
+                        <span class="text-emerald-300">Siang ${counts.siang}</span>
+                    </div>
+                    <div class="relative mt-2 h-4 text-[9px] font-normal text-slate-500">
+                        <span class="absolute left-0">08.00</span><span class="absolute left-[28.6%] -translate-x-1/2">12.00</span><span class="absolute left-[57.1%] -translate-x-1/2">16.00</span><span class="absolute right-0">22.00</span>
+                    </div>
+                </th>`;
+            }).join('');
 
-                tbody.innerHTML += `
-                    <tr class="transition ${rowClass}">
-                        <td class="py-3 px-4 flex items-center gap-2">
-                            ${item.name} 
-                            ${isMyData ? '<span class="text-[10px] bg-indigo-500 text-white px-2 py-0.5 rounded-full font-semibold">Jadwal Anda</span>' : ''}
-                        </td>
-                        <td class="py-3 px-4 text-center font-mono">${item.masuk}</td>
-                        <td class="py-3 px-4 text-center font-mono">${item.libur}</td>
-                        <td class="py-3 px-4 text-center font-mono">${item.pagi}</td>
-                        <td class="py-3 px-4 text-center font-mono">${item.middle}</td>
-                        <td class="py-3 px-4 text-center font-mono">${item.siang}</td>
-                        <td class="py-3 px-4 text-center">
-                            ${isMyData ? '<span class="text-emerald-400 font-semibold text-[11px]">Aktif (Terang)</span>' : '<span class="text-slate-600 text-[11px]">Samar / Tim Lain</span>'}
-                        </td>
-                    </tr>
-                `;
-            });
+            thead.innerHTML = `<tr><th class="sticky left-0 z-10 min-w-[190px] border-b border-slate-700 bg-slate-900 px-4 py-3 text-left align-top uppercase tracking-wide">Nama Karyawan</th>${dayHeaders}</tr>`;
+
+            if (employees.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${dateKeys.length + 1}" class="py-6 text-center text-slate-500">Tidak ada nama karyawan yang cocok.</td></tr>`;
+                return;
+            }
+
+            const colors = {
+                Pagi: 'bg-amber-500 text-amber-950',
+                Middle: 'bg-sky-500 text-sky-950',
+                Siang: 'bg-emerald-500 text-emerald-950'
+            };
+
+            tbody.innerHTML = employees.map(name => {
+                const isMyData = currentUser && (name.toLowerCase().includes(currentUser.name.toLowerCase()) || currentUser.name.toLowerCase().includes(name.toLowerCase()));
+                const rowClass = isMyData ? 'bg-indigo-600/15' : 'hover:bg-slate-800/30';
+                const safeName = escapeHTML(name);
+                const cells = dateKeys.map(dateKey => {
+                    const shift = entries.find(entry => entry.date === dateKey && entry.name === name);
+                    if (!shift || shift.off || shift.unassigned) {
+                        const label = shift && shift.unassigned ? '—' : 'OFF';
+                        return `<td class="border-l border-slate-800/80 px-3 py-2"><div class="py-2 text-center text-[10px] text-slate-600">${label}</div></td>`;
+                    }
+                    const left = Math.max(0, Math.min(100, (shift.start - 480) / 840 * 100));
+                    const width = Math.max(0, Math.min(100 - left, (shift.end - shift.start) / 840 * 100));
+                    const range = `${shift.startText}–${shift.endText}`;
+                    const color = colors[shift.shift] || 'bg-slate-400 text-slate-950';
+                    return `<td class="border-l border-slate-800/80 px-3 py-2">
+                        <div class="relative h-6 overflow-hidden rounded bg-slate-950/70">
+                            <div class="absolute inset-y-0 flex items-center overflow-hidden rounded px-1.5 text-[10px] font-bold ${color}" style="left:${left}%;width:${width}%" title="${shift.shift} ${range}">${shift.shift}</div>
+                        </div>
+                        <div class="mt-1 text-center font-mono text-[10px] text-slate-300">${range} WIB</div>
+                    </td>`;
+                }).join('');
+                return `<tr class="${rowClass}"><th class="sticky left-0 z-[1] border-r border-slate-800 bg-slate-900/95 px-4 py-3 text-left font-semibold ${isMyData ? 'text-white' : 'text-slate-300'}">${safeName}${isMyData ? '<span class="ml-2 text-[9px] text-indigo-300">ANDA</span>' : ''}</th>${cells}</tr>`;
+            }).join('');
+        }
+
+        function parseMonth(value) {
+            const text = String(value || '').toLowerCase();
+            const months = [
+                ['januari', 'january', 'jan'], ['februari', 'february', 'feb'], ['maret', 'march', 'mar'],
+                ['april', 'apr'], ['mei', 'may'], ['juni', 'june', 'jun'], ['juli', 'july', 'jul'],
+                ['agustus', 'august', 'agu', 'aug'], ['september', 'sep'], ['oktober', 'october', 'okt', 'oct'],
+                ['november', 'nov'], ['desember', 'december', 'des', 'dec']
+            ];
+            for (let month = 0; month < months.length; month++) {
+                if (months[month].some(name => text.includes(name))) return month;
+            }
+            return null;
+        }
+
+        function parseDateHeader(value) {
+            if (value instanceof Date && !Number.isNaN(value.getTime())) {
+                return { day: value.getDate(), month: value.getMonth(), year: value.getFullYear() };
+            }
+            const numeric = typeof value === 'number' ? value : /^\d+$/.test(String(value || '').trim()) ? Number(value) : NaN;
+            if (Number.isInteger(numeric) && numeric >= 1 && numeric <= 31) return { day: numeric };
+            if (numeric > 31 && window.XLSX && XLSX.SSF) {
+                const dateCode = XLSX.SSF.parse_date_code(numeric);
+                if (dateCode) return { day: dateCode.d, month: dateCode.m - 1, year: dateCode.y };
+            }
+            return null;
+        }
+
+        function parseShiftCell(value, dateKey) {
+            const text = String(value || '').trim();
+            const normalized = text.toLowerCase();
+            if (!normalized || normalized === '-' || normalized.includes('off') || normalized.includes('libur') || normalized.includes('kosong')) {
+                return { off: true };
+            }
+            if (normalized.includes('night') || normalized.includes('malam')) return { unassigned: true };
+
+            const timePattern = /(\d{1,2})[:.](\d{2})\s*[-–—]\s*(\d{1,2})[:.](\d{2})/;
+            const rangeMatch = normalized.match(timePattern);
+            const singleMatch = normalized.match(/(\d{1,2})[:.](\d{2})/);
+            let start;
+            let end;
+            let shift;
+
+            if (rangeMatch) {
+                start = Number(rangeMatch[1]) * 60 + Number(rangeMatch[2]);
+                end = Number(rangeMatch[3]) * 60 + Number(rangeMatch[4]);
+            } else if (singleMatch) {
+                start = Number(singleMatch[1]) * 60 + Number(singleMatch[2]);
+            }
+
+            if (normalized.includes('middle') || normalized.includes('midle') || /\bmid\b/.test(normalized)) {
+                shift = 'Middle';
+            } else if (normalized.includes('siang') || normalized.includes('special') || normalized.includes('khusus') || /\bpm\b/.test(normalized)) {
+                shift = 'Siang';
+            } else if (normalized.includes('pagi') || /\bam\b/.test(normalized)) {
+                shift = 'Pagi';
+            } else if (start !== undefined) {
+                const hour = Math.floor(start / 60);
+                shift = hour < 10 ? 'Pagi' : hour < 13 ? 'Middle' : 'Siang';
+            }
+
+            if (!shift) return null;
+            if (start === undefined) {
+                if (shift === 'Pagi') start = 480;
+                if (shift === 'Middle') start = 600;
+                if (shift === 'Siang') {
+                    const weekday = dateKey ? new Date(`${dateKey}T00:00:00`).getDay() : -1;
+                    start = normalized.includes('special') || normalized.includes('khusus') ? 810
+                        : normalized.includes('weekend') || normalized.includes('akhir pekan') || weekday === 0 || weekday === 6 ? 840
+                        : 780;
+                }
+            }
+            if (end === undefined) {
+                if (shift === 'Pagi') end = normalized.includes('full') || normalized.includes('long') ? 1020 : start + 480;
+                if (shift === 'Middle') end = 1080;
+                if (shift === 'Siang') end = start === 840 ? 1320 : 1260;
+            }
+            if (end <= start) return null;
+
+            const formatTime = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+            return { shift, start, end, startText: formatTime(start), endText: formatTime(end) };
+        }
+
+        function parseDailySchedule(jsonData) {
+            let dateHeaderRow = -1;
+            let dateColumns = [];
+            for (let rowIndex = 0; rowIndex < Math.min(jsonData.length, 6); rowIndex++) {
+                const row = jsonData[rowIndex] || [];
+                const columns = [];
+                for (let columnIndex = 1; columnIndex < row.length; columnIndex++) {
+                    if (parseDateHeader(row[columnIndex])) columns.push(columnIndex);
+                }
+                if (columns.length > dateColumns.length) {
+                    dateHeaderRow = rowIndex;
+                    dateColumns = columns;
+                }
+            }
+            if (dateColumns.length < 3) throw new Error('Baris tanggal tidak ditemukan. Pastikan tanggal harian ada di bagian atas template Excel.');
+
+            const headerText = jsonData.slice(0, dateHeaderRow + 1).flat().join(' ');
+            const yearMatch = headerText.match(/\b(20\d{2})\b/);
+            let year = yearMatch ? Number(yearMatch[1]) : new Date().getFullYear();
+            const fallbackMonth = jsonData.slice(0, dateHeaderRow + 1).flat().map(parseMonth).find(month => month !== null);
+            let currentMonth = fallbackMonth === undefined ? new Date().getMonth() : fallbackMonth;
+            let previousDay = null;
+            let previousMonth = currentMonth;
+
+            const datesByColumn = {};
+            for (let columnIndex = 0; columnIndex <= Math.max(...dateColumns); columnIndex++) {
+                for (let rowIndex = 0; rowIndex < dateHeaderRow; rowIndex++) {
+                    const month = parseMonth((jsonData[rowIndex] || [])[columnIndex]);
+                    if (month !== null) currentMonth = month;
+                }
+                if (!dateColumns.includes(columnIndex)) continue;
+
+                const headerDate = parseDateHeader((jsonData[dateHeaderRow] || [])[columnIndex]);
+                if (headerDate.month !== undefined) currentMonth = headerDate.month;
+                if (previousDay !== null && headerDate.day < previousDay && headerDate.day < 10 && previousDay > 20 && currentMonth === previousMonth) {
+                    currentMonth = (currentMonth + 1) % 12;
+                    if (currentMonth === 0) year++;
+                }
+                if (headerDate.year !== undefined) year = headerDate.year;
+                if (headerDate.month !== undefined && previousMonth === 11 && headerDate.month === 0) year++;
+
+                const date = new Date(Date.UTC(year, currentMonth, headerDate.day));
+                datesByColumn[columnIndex] = date.toISOString().slice(0, 10);
+                previousDay = headerDate.day;
+                previousMonth = currentMonth;
+            }
+
+            const weekdayPattern = /^(mo|mon|monday|sen|senin|tu|tue|tuesday|sel|selasa|we|wed|wednesday|rab|rabu|th|thu|thursday|kam|kamis|fr|fri|friday|jum|jumat|sa|sat|saturday|sab|sabtu|su|sun|sunday|min|minggu)$/i;
+            let weekdayRow = -1;
+            for (let rowIndex = dateHeaderRow + 1; rowIndex < Math.min(jsonData.length, dateHeaderRow + 3); rowIndex++) {
+                const matches = dateColumns.filter(columnIndex => weekdayPattern.test(String((jsonData[rowIndex] || [])[columnIndex] || '').trim())).length;
+                if (matches >= Math.min(3, dateColumns.length)) {
+                    weekdayRow = rowIndex;
+                    break;
+                }
+            }
+
+            const firstEmployeeRow = weekdayRow >= 0 ? weekdayRow + 1 : dateHeaderRow + 1;
+            const employees = [];
+            const entries = [];
+            for (let rowIndex = firstEmployeeRow; rowIndex < jsonData.length; rowIndex++) {
+                const row = jsonData[rowIndex] || [];
+                const name = String(row[0] || '').trim();
+                if (!name || /^(nama|jumlah|total|jml|hari kerja)$/i.test(name)) continue;
+                if (name.toLowerCase().includes('hari kerja') || name.toLowerCase().startsWith('jumlah')) break;
+
+                employees.push(name);
+                dateColumns.forEach(columnIndex => {
+                    const date = datesByColumn[columnIndex];
+                    if (!date) return;
+                    const shift = parseShiftCell(row[columnIndex], date);
+                    entries.push({ name, date, ...(shift || { off: true }) });
+                });
+            }
+            if (employees.length === 0) throw new Error('Nama karyawan tidak ditemukan pada kolom pertama template.');
+            return { employees: [...new Set(employees)], entries };
         }
 
         function handleExcelUpload(e) {
@@ -500,47 +697,22 @@
                     const worksheet = workbook.Sheets[targetSheetName];
 
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    let parsedSchedules = [];
-
-                    for (let i = 2; i < jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if (!row || !row[0]) continue; 
-
-                        const employeeName = String(row[0]).trim();
-                        if (employeeName.toUpperCase() === 'NAMA' || employeeName === '') continue;
-
-                        let pagiCount = 0, middleCount = 0, siangCount = 0, liburCount = 0;
-
-                        for (let j = 1; j < row.length; j++) {
-                            const cellVal = String(row[j] || '').trim().toLowerCase();
-
-                            if (cellVal.includes('jml') || cellVal.includes('hari kerja')) break;
-
-                            if (cellVal === '' || cellVal === 'off' || cellVal === 'libur') {
-                                liburCount++;
-                            } else if (cellVal.includes('08.00') || cellVal.includes('09.00') || cellVal.includes('08.00-17.00')) {
-                                pagiCount++;
-                            } else if (cellVal.includes('10.00')) {
-                                middleCount++;
-                            } else if (cellVal.includes('13.00') || cellVal.includes('13.30') || cellVal.includes('14.00')) {
-                                siangCount++;
-                            } else if (cellVal.length > 3) {
-                                pagiCount++;
-                            }
+                    dailyScheduleData = parseDailySchedule(jsonData);
+                    const totalsByEmployee = new Map(dailyScheduleData.employees.map(name => [name, {
+                        name, masuk: 0, libur: 0, pagi: 0, middle: 0, siang: 0
+                    }]));
+                    dailyScheduleData.entries.forEach(entry => {
+                        const summary = totalsByEmployee.get(entry.name);
+                        if (entry.off) summary.libur++;
+                        else if (!entry.unassigned) {
+                            summary.masuk++;
+                            if (entry.shift === 'Pagi') summary.pagi++;
+                            if (entry.shift === 'Middle') summary.middle++;
+                            if (entry.shift === 'Siang') summary.siang++;
                         }
-
-                        const totalMasuk = pagiCount + middleCount + siangCount;
-                        parsedSchedules.push({
-                            name: employeeName,
-                            masuk: totalMasuk,
-                            libur: liburCount,
-                            pagi: pagiCount,
-                            middle: middleCount,
-                            siang: siangCount
-                        });
-                    }
-
-                    scheduleSummaries = parsedSchedules;
+                    });
+                    scheduleSummaries = [...totalsByEmployee.values()];
+                    localStorage.setItem('shiftsync_ops_daily_schedule', JSON.stringify(dailyScheduleData));
                     localStorage.setItem('shiftsync_ops_summaries', JSON.stringify(scheduleSummaries));
                     addLog(`Import Sheet '${targetSheetName}' Berhasil (${scheduleSummaries.length} Karyawan)`);
                     showToast(`Berhasil membaca Sheet: "${targetSheetName}" (${scheduleSummaries.length} Karyawan)`, 'success');
@@ -550,7 +722,7 @@
                     switchTab('schedule');
                 } catch (err) {
                     console.error(err);
-                    showToast('Gagal memproses file Excel!', 'error');
+                    showToast(err.message || 'Gagal memproses file Excel!', 'error');
                 }
             };
             reader.readAsArrayBuffer(file);
