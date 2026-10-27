@@ -465,6 +465,7 @@
                 const dayName = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(date);
                 const dateLabel = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short' }).format(date);
                 const dayEntries = entries.filter(entry => entry.date === dateKey && !entry.off);
+                const offCount = entries.filter(entry => entry.date === dateKey && entry.off).length;
                 const counts = {
                     pagi: dayEntries.filter(entry => entry.shift === 'Pagi').length,
                     middle: dayEntries.filter(entry => entry.shift === 'Middle').length,
@@ -477,6 +478,7 @@
                         <span class="text-amber-300">Pagi ${counts.pagi}</span>
                         <span class="text-sky-300">Middle ${counts.middle}</span>
                         <span class="text-emerald-300">Siang ${counts.siang}</span>
+                        <span class="text-rose-300">OFF ${offCount}</span>
                     </div>
                     <div class="relative mt-2 h-4 text-[9px] font-normal text-slate-500">
                         <span class="absolute left-0">08.00</span><span class="absolute left-[28.6%] -translate-x-1/2">12.00</span><span class="absolute left-[57.1%] -translate-x-1/2">16.00</span><span class="absolute right-0">22.00</span>
@@ -498,14 +500,21 @@
             };
 
             tbody.innerHTML = employees.map(name => {
-                const isMyData = currentUser && (name.toLowerCase().includes(currentUser.name.toLowerCase()) || currentUser.name.toLowerCase().includes(name.toLowerCase()));
-                const rowClass = isMyData ? 'bg-indigo-600/15' : 'hover:bg-slate-800/30';
+                const normalizedName = name.toLowerCase();
+                const isMyData = currentUser && [currentUser.name, currentUser.id].some(identity => {
+                    const normalizedIdentity = identity.toLowerCase();
+                    return normalizedName.includes(normalizedIdentity) || normalizedIdentity.includes(normalizedName);
+                });
+                const rowClass = isMyData
+                    ? 'border-l-4 border-indigo-400 bg-indigo-600/20 font-semibold'
+                    : 'opacity-40 hover:opacity-70 hover:bg-slate-800/30';
                 const safeName = escapeHTML(name);
                 const cells = dateKeys.map(dateKey => {
                     const shift = entries.find(entry => entry.date === dateKey && entry.name === name);
                     if (!shift || shift.off || shift.unassigned) {
                         const label = shift && shift.unassigned ? '—' : 'OFF';
-                        return `<td class="border-l border-slate-800/80 px-3 py-2"><div class="py-2 text-center text-[10px] text-slate-600">${label}</div></td>`;
+                        const offStyle = label === 'OFF' ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30' : 'text-slate-600';
+                        return `<td class="border-l border-slate-800/80 px-3 py-2"><div class="py-1.5 text-center"><span class="inline-block min-w-12 rounded px-2 py-1 text-[10px] font-semibold ${offStyle}">${label}</span></div></td>`;
                     }
                     const left = Math.max(0, Math.min(100, (shift.start - 480) / 840 * 100));
                     const width = Math.max(0, Math.min(100 - left, (shift.end - shift.start) / 840 * 100));
