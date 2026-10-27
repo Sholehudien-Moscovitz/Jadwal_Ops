@@ -119,7 +119,7 @@ insert into public.profiles (user_id, login_name, display_name, employee_name, r
 select auth_user.id, seed.login_name, seed.display_name, seed.employee_name, seed.role
 from (values
     ('rezarizali', 'REZA RIZALI', 'REZA RIZALI', 'VIEWER'),
-    ('ahmadsholehsholahudin', 'AHMAD SHOLEH SHOLAHUDIN', 'AHMAD SHOLEH SHOLAHUDIN', 'SUPER_ADMIN'),
+    ('sholeh', 'AHMAD SHOLEH SHOLAHUDIN', 'AHMAD SHOLEH SHOLAHUDIN', 'SUPER_ADMIN'),
     ('wilihidayat', 'WILI HIDAYAT', 'WILI HIDAYAT', 'VIEWER'),
     ('agungwijaya', 'AGUNG WIJAYA', 'AGUNG WIJAYA', 'VIEWER'),
     ('megarifasaputra', 'MEGA RIFA SAPUTRA', 'MEGA RIFA SAPUTRA', 'VIEWER'),
