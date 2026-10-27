@@ -617,79 +617,75 @@
            EXCEL PARSING LOGIC SESUAI ATURAN BARU (BARIS 1-13 SPACING)
         ------------------------------------------------------------- */
         function handleExcelUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        const file = e.target.files[0];
+        if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+        try {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
 
-                    let newSummaries = [];
+            // Ambil sheet paling kanan (terakhir) dari file Excel
+            const lastSheetIndex = workbook.SheetNames.length - 1;
+            const targetSheetName = workbook.SheetNames[lastSheetIndex];
+            const worksheet = workbook.Sheets[targetSheetName];
 
-                    // Baris 1 sampai 13 (index 0 sampai 12) dianggap jarak/spacer, mulai baca dari index 13
-                    for (let i = 13; i < jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if (!row || !row[0]) continue; // Lewati jika kolom A (nama) kosong
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                        const employeeName = String(row[0]).trim();
-                        let pagiCount = 0;
-                        let middleCount = 0;
-                        let siangCount = 0;
-                        let liburCount = 0;
+            let newSummaries = [];
 
-                        // Kolom B sampai seterusnya (index 1 dst) adalah tanggal periode
-                        for (let j = 1; j < row.length; j++) {
-                            const cellVal = String(row[j] || '').trim().toLowerCase();
+            // Baris 1-13 dilewati sebagai jarak/spacer, mulai baca dari index 13 (Baris 14)
+            for (let i = 13; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || !row[0]) continue; // Lewati jika kolom A kosong
 
-                            if (cellVal === '' || cellVal === 'off' || cellVal === 'libur') {
-                                liburCount++;
-                            } else if (cellVal.includes('08:00') || cellVal.includes('09:00') || cellVal.includes('08:00 - 17:00')) {
-                                pagiCount++;
-                            } else if (cellVal.includes('10:00')) {
-                                middleCount++;
-                            } else if (cellVal.includes('13:00') || cellVal.includes('13:30') || cellVal.includes('14:00')) {
-                                siangCount++;
-                            } else {
-                                // Default jika ada format lain tapi terhitung masuk
-                                pagiCount++;
-                            }
-                        }
+                const employeeName = String(row[0]).trim();
+                let pagiCount = 0, middleCount = 0, siangCount = 0, liburCount = 0;
 
-                        const totalMasuk = pagiCount + middleCount + siangCount;
+                // Kolom B sampai seterusnya adalah tanggal periode
+                for (let j = 1; j < row.length; j++) {
+                    const cellVal = String(row[j] || '').trim().toLowerCase();
 
-                        newSummaries.push({
-                            name: employeeName,
-                            masuk: totalMasuk,
-                            libur: liburCount,
-                            pagi: pagiCount,
-                            middle: middleCount,
-                            siang: siangCount
-                        });
+                    if (cellVal === '' || cellVal === 'off' || cellVal === 'libur') {
+                        liburCount++;
+                    } else if (cellVal.includes('08:00') || cellVal.includes('09:00') || cellVal.includes('08:00 - 17:00')) {
+                        pagiCount++;
+                    } else if (cellVal.includes('10:00')) {
+                        middleCount++;
+                    } else if (cellVal.includes('13:00') || cellVal.includes('13:30') || cellVal.includes('14:00')) {
+                        siangCount++;
+                    } else {
+                        pagiCount++;
                     }
-
-                    scheduleSummaries = newSummaries;
-                    localStorage.setItem('shiftsync_ops_summaries', JSON.stringify(scheduleSummaries));
-                    
-                    addLog(`Import dan Rekap Template Excel Berhasil (${scheduleSummaries.length} Karyawan)`);
-                    showToast(`Berhasil memproses template Excel (${scheduleSummaries.length} personil terdata)!`, 'success');
-                    
-                    renderDashboard();
-                    renderScheduleTable();
-                    generateSQLQuery();
-                    switchTab('dashboard');
-                } catch (err) {
-                    console.error(err);
-                    showToast('Gagal memproses file Excel. Pastikan format template sesuai!', 'error');
                 }
-            };
-            reader.readAsArrayBuffer(file);
-        }
 
+                const totalMasuk = pagiCount + middleCount + siangCount;
+                newSummaries.push({
+                    name: employeeName,
+                    masuk: totalMasuk,
+                    libur: liburCount,
+                    pagi: pagiCount,
+                    middle: middleCount,
+                    siang: siangCount
+                });
+            }
+
+            scheduleSummaries = newSummaries;
+            localStorage.setItem('shiftsync_ops_summaries', JSON.stringify(scheduleSummaries));
+            addLog(`Import Sheet '${targetSheetName}' Berhasil (${scheduleSummaries.length} Karyawan)`);
+            showToast(`Membaca Sheet: "${targetSheetName}" (${scheduleSummaries.length} personil)`, 'success');
+            
+            renderDashboard();
+            renderScheduleTable();
+            generateSQLQuery();
+            switchTab('dashboard');
+        } catch (err) {
+            showToast('Gagal memproses file Excel!', 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
         function exportToCSV() {
             let csvContent = "data:text/csv;charset=utf-8,Nama Karyawan,Total Masuk,Libur (OFF),Shift Pagi,Shift Middle,Shift Siang\n";
             scheduleSummaries.forEach(row => {
