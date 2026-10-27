@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShiftSync Pro - Operasional Edition</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        darkbg: '#0f172a',
+                        cardbg: 'rgba(30, 41, 59, 0.7)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome & SheetJS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b, #0f172a 60%, #020617);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glass-input {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+        }
+        .glass-input:focus {
+            border-color: #6366f1;
+            outline: none;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-200">
+
+    <!-- APP CONTAINER -->
+    <div id="app" class="min-h-screen flex flex-col">
+
+        <!-- LOGIN VIEW -->
+        <div id="loginView" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+            <div class="glass max-w-md w-full p-8 rounded-2xl shadow-2xl border border-indigo-500/20 relative overflow-hidden">
+                <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl"></div>
+                
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 mb-3 shadow-inner">
+                        <i class="fa-solid fa-industry text-3xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white">ShiftSync Pro</h1>
+                    <p class="text-xs text-indigo-300 tracking-widest uppercase font-semibold mt-1">Divisi Operasional System</p>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">ID Pengguna (User ID)</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="text" id="loginId" required class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm" placeholder="Contoh: Admin / Admin1 / Admin3">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Kata Sandi (Password)</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="password" id="loginPassword" required class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm" placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 text-sm mt-2">
+                        <i class="fa-solid fa-right-to-bracket"></i> Masuk Sistem
+                    </button>
+                </form>
+
+                <!-- Quick Switcher for Testing -->
+                <div class="mt-6 pt-5 border-t border-slate-700/50">
+                    <p class="text-xs font-medium text-slate-400 mb-2 flex items-center justify-between">
+                        <span><i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Quick Switch Test Account:</span>
+                        <span class="text-[10px] text-slate-500">Pass: Admin12345</span>
+                    </p>
+                    <div class="grid grid-cols-2 gap-1.5 text-xs">
+                        <button onclick="quickFill('Admin')" class="p-2 glass-card hover:bg-indigo-600/20 text-left rounded-lg text-indigo-300 border border-indigo-500/20 transition flex flex-col">
+                            <span class="font-bold text-white text-[11px]">Super Admin</span>
+                            <span class="text-[10px] text-slate-400">ID: Admin (Akses Full)</span>
+                        </button>
+                        <button onclick="quickFill('Admin1')" class="p-2 glass-card hover:bg-indigo-600/20 text-left rounded-lg text-emerald-300 border border-emerald-500/20 transition flex flex-col">
+                            <span class="font-bold text-white text-[11px]">Admin Operasional 1</span>
+                            <span class="text-[10px] text-slate-400">ID: Admin1 (Edit Jadwal)</span>
+                        </button>
+                        <button onclick="quickFill('Admin2')" class="p-2 glass-card hover:bg-indigo-600/20 text-left rounded-lg text-emerald-300 border border-emerald-500/20 transition flex flex-col">
+                            <span class="font-bold text-white text-[11px]">Admin Operasional 2</span>
+                            <span class="text-[10px] text-slate-400">ID: Admin2 (Edit Jadwal)</span>
+                        </button>
+                        <button onclick="quickFill('Admin3')" class="p-2 glass-card hover:bg-indigo-600/20 text-left rounded-lg text-slate-300 border border-slate-500/20 transition flex flex-col">
+                            <span class="font-bold text-white text-[11px]">Viewer (Admin 3-10)</span>
+                            <span class="text-[10px] text-slate-400">ID: Admin3 (Lihat Saja)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD LAYOUT -->
+        <div id="mainLayout" class="hidden flex-1 flex flex-col min-h-screen">
+
+            <!-- HEADER / NAVBAR -->
+            <header class="glass sticky top-0 z-30 border-b border-slate-800">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shadow-inner">
+                            <i class="fa-solid fa-cogs text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="font-bold text-lg text-white tracking-tight">ShiftSync Pro</h2>
+                                <span class="text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">DIVISI OPERASIONAL</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 font-mono hidden sm:block" id="liveClock">WIB: --:--:--</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="text-right hidden sm:block">
+                            <div id="userBadgeName" class="text-xs font-semibold text-white">---</div>
+                            <div id="userBadgeRole" class="text-[10px] text-slate-400 font-mono">---</div>
+                        </div>
+                        <button onclick="logout()" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-rose-600/20 hover:text-rose-400 text-slate-300 border border-slate-700 transition" title="Keluar / Logout">
+                            <i class="fa-solid fa-power-off"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- NAVIGATION TABS -->
+            <nav class="bg-slate-900/80 border-b border-slate-800/80 px-4 sm:px-8">
+                <div class="max-w-7xl mx-auto flex space-x-1 sm:space-x-2 overflow-x-auto py-2" id="navTabs">
+                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition bg-indigo-600 text-white">
+                        <i class="fa-solid fa-chart-pie"></i> Ringkasan Tim
+                    </button>
+                    <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-calendar-days"></i> Jadwal Operasional
+                    </button>
+                    <button onclick="switchTab('excel')" id="tab-excel" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-file-excel text-emerald-400"></i> Import Template Excel
+                    </button>
+                    <button onclick="switchTab('dbeaver')" id="tab-dbeaver" class="tab-btn superadmin-only px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-database text-cyan-400"></i> Sync DBeaver SQL
+                    </button>
+                    <button onclick="switchTab('users')" id="tab-users" class="tab-btn superadmin-only px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-users-gear text-amber-400"></i> Kelola User (10 Account)
+                    </button>
+                    <button onclick="switchTab('logs')" id="tab-logs" class="tab-btn superadmin-only px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Log Sistem
+                    </button>
+                </div>
+            </nav>
+
+            <!-- MAIN CONTENT AREA -->
+            <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+                <!-- 1. DASHBOARD VIEW -->
+                <section id="view-dashboard" class="tab-content space-y-6">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div class="glass p-4 rounded-2xl border-l-4 border-indigo-500">
+                            <div class="text-xs text-slate-400 font-medium mb-1">Total Personil Ops</div>
+                            <div class="text-2xl font-bold text-white font-mono" id="statTotalStaff">0</div>
+                            <div class="text-[10px] text-indigo-400 mt-1"><i class="fa-solid fa-users"></i> Divisi Operasional</div>
+                        </div>
+                        <div class="glass p-4 rounded-2xl border-l-4 border-emerald-500">
+                            <div class="text-xs text-slate-400 font-medium mb-1">Dinas Hari Ini</div>
+                            <div class="text-2xl font-bold text-emerald-400 font-mono" id="statDutyToday">0</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Status Shift Bertugas</div>
+                        </div>
+                        <div class="glass p-4 rounded-2xl border-l-4 border-amber-500">
+                            <div class="text-xs text-slate-400 font-medium mb-1">Shift Pagi</div>
+                            <div class="text-2xl font-bold text-amber-400 font-mono" id="statMorningShift">0</div>
+                            <div class="text-[10px] text-slate-400 mt-1">08:00 / 09:00 / 08-17</div>
+                        </div>
+                        <div class="glass p-4 rounded-2xl border-l-4 border-blue-500">
+                            <div class="text-xs text-slate-400 font-medium mb-1">Shift Siang / Middle</div>
+                            <div class="text-2xl font-bold text-blue-400 font-mono" id="statNightShift">0</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Middle & Siang Sesi</div>
+                        </div>
+                        <div class="glass p-4 rounded-2xl border-l-4 border-rose-500">
+                            <div class="text-xs text-slate-400 font-medium mb-1">Libur / Off</div>
+                            <div class="text-2xl font-bold text-rose-400 font-mono" id="statOffDuty">0</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Off Shift Operasional</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 glass p-5 rounded-2xl space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                                <h3 class="font-bold text-base text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-list-check text-indigo-400"></i> Jadwal Operasional Periode Aktif (Tgl 21 - 20)
+                                </h3>
+                                <span class="text-xs bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg font-mono" id="currentDateDisplay">-- --- ----</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="border-b border-slate-800 text-slate-400">
+                                            <th class="py-2.5 px-3">Nama Petugas (Kolom A)</th>
+                                            <th class="py-2.5 px-3">Total Masuk</th>
+                                            <th class="py-2.5 px-3">Libur (OFF)</th>
+                                            <th class="py-2.5 px-3">Shift Pagi</th>
+                                            <th class="py-2.5 px-3">Shift Middle</th>
+                                            <th class="py-2.5 px-3">Shift Siang</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="todayShiftTable" class="divide-y divide-slate-800/50">
+                                        <!-- Dynamic JS Insertion -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="glass p-5 rounded-2xl space-y-4">
+                            <h3 class="font-bold text-base text-white flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                                <i class="fa-solid fa-shield-halved text-emerald-400"></i> Hak Akses Pengguna
+                            </h3>
+                            <div class="space-y-3 text-xs">
+                                <div class="p-3 bg-indigo-950/40 rounded-xl border border-indigo-500/20 space-y-1">
+                                    <span class="font-bold text-indigo-300">Super Admin (User: Admin)</span>
+                                    <p class="text-slate-400">Akses penuh: Dashboard, Edit Jadwal, Import Template Excel .xlsx, Sync SQL DBeaver.</p>
+                                </div>
+                                <div class="p-3 bg-emerald-950/40 rounded-xl border border-emerald-500/20 space-y-1">
+                                    <span class="font-bold text-emerald-300">Admin Operasional (Admin 1 & 2)</span>
+                                    <p class="text-slate-400">Akses khusus untuk **mengunggah template Excel** dan **mengatur/mengedit jadwal**.</p>
+                                </div>
+                                <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-700/40 space-y-1">
+                                    <span class="font-bold text-slate-300">Viewer / Staff (Admin 3 s/d 10)</span>
+                                    <p class="text-slate-400">Akses Read-Only: Hanya melihat ringkasan rekapitulasi shift.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. JADWAL OPERASIONAL VIEW -->
+                <section id="view-schedule" class="tab-content hidden space-y-4">
+                    <div class="glass p-4 sm:p-6 rounded-2xl space-y-4">
+                        <div class="flex flex-col md:flex-row gap-3 items-center justify-between border-b border-slate-800 pb-4">
+                            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                <div class="relative w-full sm:w-64">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                                    <input type="text" id="searchStaff" oninput="renderScheduleTable()" placeholder="Cari nama karyawan..." class="glass-input w-full pl-9 pr-3 py-2 rounded-xl text-xs">
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                                <button onclick="exportToCSV()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-download text-emerald-400"></i> Export Rekap CSV
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-900/90 text-slate-300 uppercase tracking-wider font-semibold border-b border-slate-800">
+                                    <tr>
+                                        <th class="py-3 px-4">Nama Karyawan (Kolom A)</th>
+                                        <th class="py-3 px-4 text-center">Total Masuk</th>
+                                        <th class="py-3 px-4 text-center">Libur (OFF)</th>
+                                        <th class="py-3 px-4 text-center">Shift Pagi</th>
+                                        <th class="py-3 px-4 text-center">Shift Middle</th>
+                                        <th class="py-3 px-4 text-center">Shift Siang</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scheduleTableBody" class="divide-y divide-slate-800/60">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. IMPORT EXCEL VIEW (Admin 1, Admin 2 & Super Admin) -->
+                <section id="view-excel" class="tab-content hidden space-y-6">
+                    <div class="glass p-6 rounded-2xl max-w-2xl mx-auto space-y-5">
+                        <div class="text-center space-y-2">
+                            <div class="w-14 h-14 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl text-emerald-400 mx-auto flex items-center justify-center text-2xl">
+                                <i class="fa-solid fa-file-excel"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white">Import Template Jadwal Excel (.xlsx)</h3>
+                            <p class="text-xs text-slate-400">Unggah berkas jadwal Anda. Sistem otomatis melewati baris 1-13 (spacer/header jarak), membaca Kolom A (Nama Karyawan) dan kolom tanggal berikutnya (Tgl 21 s.d. 20).</p>
+                        </div>
+
+                        <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-8 text-center bg-slate-900/40 transition cursor-pointer" onclick="document.getElementById('excelFileInput').click()">
+                            <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)">
+                            <i class="fa-solid fa-cloud-arrow-up text-4xl text-indigo-400 mb-3"></i>
+                            <p class="text-xs font-semibold text-white">Klik untuk memilih file Excel Template (.xlsx)</p>
+                            <p class="text-[11px] text-slate-500 mt-1">Sistem mendeteksi jam masuk secara otomatis (Pagi, Middle, Siang, OFF)</p>
+                        </div>
+
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+                            <span class="font-semibold text-slate-300 block mb-1">Aturan Pemetaan Jam Shift Excel:</span>
+                            <div class="grid grid-cols-1 gap-1.5 text-[11px] text-slate-400 font-mono">
+                                <div>• <b>Shift Pagi:</b> 08:00 - 16:00 | 09:00 - 17:00 | 08:00 - 17:00</div>
+                                <div>• <b>Shift Middle:</b> 10:00 - 18:00</div>
+                                <div>• <b>Shift Siang:</b> 13:00 - 21:00 | 13:30 - 21:00 | 14:00 - 22:00</div>
+                                <div>• <b>Libur (OFF):</b> Kolom kosong / blank / teks OFF / Libur</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. DBEAVER SQL SYNC (Super Admin Exclusive) -->
+                <section id="view-dbeaver" class="tab-content hidden space-y-6">
+                    <div class="glass p-6 rounded-2xl space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                            <div>
+                                <h3 class="font-bold text-lg text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-database text-cyan-400"></i> DBeaver SQL Generator & Synchronization
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Fitur khusus Super Admin untuk generate Query SQL DML/DDL Rekapitulasi Shift.</p>
+                            </div>
+                            <button onclick="copySQL()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-lg shadow-cyan-600/20">
+                                <i class="fa-solid fa-copy"></i> Salin Query SQL
+                            </button>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-2">Generated SQL Query Script:</label>
+                            <textarea id="sqlOutput" readonly class="w-full h-80 glass-input font-mono text-xs p-4 rounded-xl leading-relaxed text-emerald-400 bg-slate-950 border border-slate-800"></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. KELOLA USER (Super Admin Exclusive) -->
+                <section id="view-users" class="tab-content hidden space-y-6">
+                    <div class="glass p-6 rounded-2xl space-y-4">
+                        <h3 class="font-bold text-lg text-white flex items-center gap-2 border-b border-slate-800 pb-4">
+                            <i class="fa-solid fa-users-gear text-amber-400"></i> Daftar 10 Akun Pengguna Sistem
+                        </h3>
+                        <div class="overflow-x-auto rounded-xl border border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-900 text-slate-300 font-semibold border-b border-slate-800 uppercase">
+                                    <tr>
+                                        <th class="py-3 px-4">User ID</th>
+                                        <th class="py-3 px-4">Nama Akun</th>
+                                        <th class="py-3 px-4">Kategori Role</th>
+                                        <th class="py-3 px-4">Hak Akses Modul</th>
+                                        <th class="py-3 px-4">Status Akun</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userTableBody" class="divide-y divide-slate-800"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. SYSTEM LOGS (Super Admin Exclusive) -->
+                <section id="view-logs" class="tab-content hidden space-y-6">
+                    <div class="glass p-6 rounded-2xl space-y-4">
+                        <h3 class="font-bold text-lg text-white flex items-center gap-2 border-b border-slate-800 pb-4">
+                            <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i> Audit Log System & Activity
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs font-mono">
+                                <thead class="text-slate-400 border-b border-slate-800">
+                                    <tr>
+                                        <th class="py-2.5 px-3">Waktu Log</th>
+                                        <th class="py-2.5 px-3">User ID</th>
+                                        <th class="py-2.5 px-3">Role</th>
+                                        <th class="py-2.5 px-3">Aktivitas Modul</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logTableBody" class="divide-y divide-slate-800/60 text-slate-300"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+
+        <!-- TOAST NOTIFICATION -->
+        <div id="toast" class="fixed bottom-5 right-5 z-50 hidden transition-all duration-300">
+            <div id="toastContent" class="glass px-4 py-3 rounded-xl border flex items-center gap-3 text-xs shadow-2xl"></div>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const ACCOUNTS = [
+            { id: 'Admin', pass: 'Admin12345', name: 'Super Administrator', role: 'SUPER_ADMIN', badge: 'SUPER ADMIN (FULL ACCESS)' },
+            { id: 'Admin1', pass: 'Admin12345', name: 'Admin Operasional 1', role: 'ADMIN_OPS', badge: 'ADMIN OPERASIONAL (EDITOR)' },
+            { id: 'Admin2', pass: 'Admin12345', name: 'Admin Operasional 2', role: 'ADMIN_OPS', badge: 'ADMIN OPERASIONAL (EDITOR)' },
+            { id: 'Admin3', pass: 'Admin12345', name: 'Admin Viewer 3', role: 'VIEWER', badge: 'VIEWER (READ-ONLY)' },
+            { id: 'Admin4', pass: 'Admin12345', name: 'Admin Viewer 4', role: 'VIEWER', badge: 'VIEWER (READ-ONLY)' },
+            { id: 'Admin5', pass: 'Admin12345', name: 'Admin Viewer 5', role: 'VIEWER', badge: 'VIEWER (READ-ONLY)' },
+            { id: 'Admin6', pass: 'Admin12345', name: 'Admin Viewer 6', role: 'VIEWER', badge: 'VIEWER (READ-ONLY)' },
+            { id: 'Admin7', pass: 'Admin12345', name: 'Admin Viewer 7', role: 'VIEWER', badge: 'VIEWER (READ-ONLY)' },
+            { id: 'Admin8', pass: 'Admin12345', name: 'Admin Viewer 8', role: 'VIEWER', badge: 'VIEWER (READ-ONLY)' },
+            { id: 'Admin9', pass: 'Admin12345', name: 'Admin Viewer 9', role: 'VIEWER', badge: 'VIEWER (READ-ONLY)' },
+            { id: 'Admin10', pass: 'Admin12345', name: 'Admin Viewer 10', role: 'VIEWER', badge: 'VIEWER (READ-ONLY)' }
+        ];
+
+        let currentUser = null;
+        let scheduleSummaries = JSON.parse(localStorage.getItem('shiftsync_ops_summaries')) || [];
+        let systemLogs = JSON.parse(localStorage.getItem('shiftsync_ops_logs')) || [
+            { time: new Date().toLocaleString('id-ID'), user: 'System', role: 'SYSTEM', action: 'Inisialisasi Sistem Template Periode Tgl 21-20' }
+        ];
+
+        window.onload = function() {
+            startClock();
+            checkSession();
+        };
+
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                const clockElem = document.getElementById('liveClock');
+                if (clockElem) {
+                    clockElem.innerText = `WIB: ${now.toLocaleTimeString('id-ID')} | ${now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}`;
+                }
+            }, 1000);
+        }
+
+        function quickFill(userId) {
+            document.getElementById('loginId').value = userId;
+            document.getElementById('loginPassword').value = 'Admin12345';
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const idInput = document.getElementById('loginId').value.trim();
+            const passInput = document.getElementById('loginPassword').value.trim();
+            const foundUser = ACCOUNTS.find(acc => acc.id.toLowerCase() === idInput.toLowerCase() && acc.pass === passInput);
+
+            if (foundUser) {
+                currentUser = foundUser;
+                localStorage.setItem('shiftsync_ops_session', JSON.stringify(currentUser));
+                addLog(`Login Berhasil ke Modul Operasional`);
+                showToast(`Selamat Datang, ${currentUser.name}`, 'success');
+                initUserInterface();
+            } else {
+                showToast('ID Pengguna atau Password Salah!', 'error');
+            }
+        }
+
+        function checkSession() {
+            const session = localStorage.getItem('shiftsync_ops_session');
+            if (session) {
+                currentUser = JSON.parse(session);
+                initUserInterface();
+            } else {
+                document.getElementById('loginView').classList.remove('hidden');
+                document.getElementById('mainLayout').classList.add('hidden');
+            }
+        }
+
+        function logout() {
+            if (currentUser) addLog('Logout dari sistem');
+            currentUser = null;
+            localStorage.removeItem('shiftsync_ops_session');
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('mainLayout').classList.add('hidden');
+            showToast('Berhasil keluar sistem', 'info');
+        }
+
+        function initUserInterface() {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('mainLayout').classList.remove('hidden');
+            document.getElementById('userBadgeName').innerText = currentUser.name;
+            document.getElementById('userBadgeRole').innerText = currentUser.badge;
+
+            applyRBACPermissions();
+            renderDashboard();
+            renderScheduleTable();
+            renderUsersTable();
+            renderLogsTable();
+            generateSQLQuery();
+            switchTab('dashboard');
+        }
+
+        function applyRBACPermissions() {
+            const isSuperAdmin = currentUser.role === 'SUPER_ADMIN';
+            const isEditor = currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'ADMIN_OPS';
+
+            document.querySelectorAll('.superadmin-only').forEach(el => {
+                el.style.display = isSuperAdmin ? 'flex' : 'none';
+            });
+            const tabExcel = document.getElementById('tab-excel');
+            if (tabExcel) tabExcel.style.display = isEditor ? 'flex' : 'none';
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-indigo-600', 'text-white');
+                el.classList.add('text-slate-400');
+            });
+            const activeContent = document.getElementById(`view-${tabId}`);
+            const activeTabBtn = document.getElementById(`tab-${tabId}`);
+            if (activeContent) activeContent.classList.remove('hidden');
+            if (activeTabBtn) {
+                activeTabBtn.classList.add('bg-indigo-600', 'text-white');
+                activeTabBtn.classList.remove('text-slate-400');
+            }
+        }
+
+        function renderDashboard() {
+            const totalStaff = scheduleSummaries.length;
+            let totalDuty = 0, totalPagi = 0, totalMiddle = 0, totalSiang = 0, totalOff = 0;
+
+            scheduleSummaries.forEach(s => {
+                totalPagi += s.pagi;
+                totalMiddle += s.middle;
+                totalSiang += s.siang;
+                totalOff += s.libur;
+                totalDuty += s.masuk;
+            });
+
+            document.getElementById('statTotalStaff').innerText = totalStaff;
+            document.getElementById('statDutyToday').innerText = totalDuty;
+            document.getElementById('statMorningShift').innerText = totalPagi;
+            document.getElementById('statNightShift').innerText = totalMiddle + totalSiang;
+            document.getElementById('statOffDuty').innerText = totalOff;
+            document.getElementById('currentDateDisplay').innerText = `Periode Aktif (Tgl 21 s.d. 20)`;
+
+            const tbody = document.getElementById('todayShiftTable');
+            tbody.innerHTML = '';
+
+            if (scheduleSummaries.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">Belum ada template Excel yang diunggah. Silakan import melalui menu Import Excel.</td></tr>`;
+                return;
+            }
+
+            scheduleSummaries.forEach(item => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-2.5 px-3 font-semibold text-white">${item.name}</td>
+                        <td class="py-2.5 px-3 font-mono text-indigo-400 font-bold">${item.masuk}</td>
+                        <td class="py-2.5 px-3 font-mono text-rose-400">${item.libur}</td>
+                        <td class="py-2.5 px-3 font-mono text-amber-300">${item.pagi}</td>
+                        <td class="py-2.5 px-3 font-mono text-blue-300">${item.middle}</td>
+                        <td class="py-2.5 px-3 font-mono text-purple-300">${item.siang}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderScheduleTable() {
+            const tbody = document.getElementById('scheduleTableBody');
+            const search = document.getElementById('searchStaff').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            const filtered = scheduleSummaries.filter(item => item.name.toLowerCase().includes(search));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-500">Tidak ada data rekapitulasi jadwal ditemukan.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/50 transition">
+                        <td class="py-3 px-4 font-semibold text-white">${item.name}</td>
+                        <td class="py-3 px-4 text-center font-mono text-indigo-400 font-bold">${item.masuk}</td>
+                        <td class="py-3 px-4 text-center font-mono text-rose-400">${item.libur}</td>
+                        <td class="py-3 px-4 text-center font-mono text-amber-300">${item.pagi}</td>
+                        <td class="py-3 px-4 text-center font-mono text-blue-300">${item.middle}</td>
+                        <td class="py-3 px-4 text-center font-mono text-purple-300">${item.siang}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        /* -------------------------------------------------------------
+           EXCEL PARSING LOGIC SESUAI ATURAN BARU (BARIS 1-13 SPACING)
+        ------------------------------------------------------------- */
+        function handleExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    let newSummaries = [];
+
+                    // Baris 1 sampai 13 (index 0 sampai 12) dianggap jarak/spacer, mulai baca dari index 13
+                    for (let i = 13; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (!row || !row[0]) continue; // Lewati jika kolom A (nama) kosong
+
+                        const employeeName = String(row[0]).trim();
+                        let pagiCount = 0;
+                        let middleCount = 0;
+                        let siangCount = 0;
+                        let liburCount = 0;
+
+                        // Kolom B sampai seterusnya (index 1 dst) adalah tanggal periode
+                        for (let j = 1; j < row.length; j++) {
+                            const cellVal = String(row[j] || '').trim().toLowerCase();
+
+                            if (cellVal === '' || cellVal === 'off' || cellVal === 'libur') {
+                                liburCount++;
+                            } else if (cellVal.includes('08:00') || cellVal.includes('09:00') || cellVal.includes('08:00 - 17:00')) {
+                                pagiCount++;
+                            } else if (cellVal.includes('10:00')) {
+                                middleCount++;
+                            } else if (cellVal.includes('13:00') || cellVal.includes('13:30') || cellVal.includes('14:00')) {
+                                siangCount++;
+                            } else {
+                                // Default jika ada format lain tapi terhitung masuk
+                                pagiCount++;
+                            }
+                        }
+
+                        const totalMasuk = pagiCount + middleCount + siangCount;
+
+                        newSummaries.push({
+                            name: employeeName,
+                            masuk: totalMasuk,
+                            libur: liburCount,
+                            pagi: pagiCount,
+                            middle: middleCount,
+                            siang: siangCount
+                        });
+                    }
+
+                    scheduleSummaries = newSummaries;
+                    localStorage.setItem('shiftsync_ops_summaries', JSON.stringify(scheduleSummaries));
+                    
+                    addLog(`Import dan Rekap Template Excel Berhasil (${scheduleSummaries.length} Karyawan)`);
+                    showToast(`Berhasil memproses template Excel (${scheduleSummaries.length} personil terdata)!`, 'success');
+                    
+                    renderDashboard();
+                    renderScheduleTable();
+                    generateSQLQuery();
+                    switchTab('dashboard');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Gagal memproses file Excel. Pastikan format template sesuai!', 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Nama Karyawan,Total Masuk,Libur (OFF),Shift Pagi,Shift Middle,Shift Siang\n";
+            scheduleSummaries.forEach(row => {
+                csvContent += `"${row.name}",${row.masuk},${row.libur},${row.pagi},${row.middle},${row.siang}\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Rekap_Shift_Operasional_Periode_21_20.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            addLog('Export Rekap CSV Shift Operasional');
+        }
+
+        function generateSQLQuery() {
+            let sql = `-- ShiftSync Pro: DBeaver SQL Script (Rekapitulasi Operasional Periode 21-20)\n`;
+            sql += `-- Generated: ${new Date().toLocaleString('id-ID')}\n\n`;
+            sql += `CREATE TABLE IF NOT EXISTS operational_shift_summary (\n`;
+            sql += `    id SERIAL PRIMARY KEY,\n`;
+            sql += `    nama_karyawan VARCHAR(100) NOT NULL,\n`;
+            sql += `    total_masuk INT DEFAULT 0,\n`;
+            sql += `    total_libur INT DEFAULT 0,\n`;
+            sql += `    shift_pagi INT DEFAULT 0,\n`;
+            sql += `    shift_middle INT DEFAULT 0,\n`;
+            sql += `    shift_siang INT DEFAULT 0,\n`;
+            sql += `    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n`;
+            sql += `);\n\n`;
+
+            if (scheduleSummaries.length > 0) {
+                sql += `INSERT INTO operational_shift_summary (nama_karyawan, total_masuk, total_libur, shift_pagi, shift_middle, shift_siang) VALUES\n`;
+                const rows = scheduleSummaries.map(s => `('${s.name.replace(/'/g, "''")}', ${s.masuk}, ${s.libur}, ${s.pagi}, ${s.middle}, ${s.siang})`);
+                sql += rows.join(',\n') + `;\n`;
+            }
+
+            document.getElementById('sqlOutput').value = sql;
+        }
+
+        function copySQL() {
+            const sqlText = document.getElementById('sqlOutput');
+            sqlText.select();
+            document.execCommand('copy');
+            addLog('Menyalin Script SQL DBeaver');
+            showToast('Query SQL DBeaver berhasil disalin!', 'success');
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+            ACCOUNTS.forEach(acc => {
+                let categoryBg = 'bg-slate-800 text-slate-300';
+                let scope = 'Dashboard & Lihat Rekap Only';
+                if (acc.role === 'SUPER_ADMIN') {
+                    categoryBg = 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30';
+                    scope = 'Akses Penuh Semua Modul + Sync DBeaver';
+                } else if (acc.role === 'ADMIN_OPS') {
+                    categoryBg = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                    scope = 'Import Template Excel & Atur Jadwal';
+                }
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-3 px-4 font-mono font-bold text-white">${acc.id}</td>
+                        <td class="py-3 px-4 text-slate-200">${acc.name}</td>
+                        <td class="py-3 px-4"><span class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${categoryBg}">${acc.badge}</span></td>
+                        <td class="py-3 px-4 text-slate-400 text-xs">${scope}</td>
+                        <td class="py-3 px-4"><span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Aktif</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addLog(action) {
+            const logEntry = {
+                time: new Date().toLocaleTimeString('id-ID') + ' - ' + new Date().toLocaleDateString('id-ID'),
+                user: currentUser ? currentUser.id : 'System',
+                role: currentUser ? currentUser.role : 'GUEST',
+                action: action
+            };
+            systemLogs.unshift(logEntry);
+            if (systemLogs.length > 50) systemLogs.pop();
+            localStorage.setItem('shiftsync_ops_logs', JSON.stringify(systemLogs));
+            renderLogsTable();
+        }
+
+        function renderLogsTable() {
+            const tbody = document.getElementById('logTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            systemLogs.forEach(log => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-2.5 px-3 text-slate-400">${log.time}</td>
+                        <td class="py-2.5 px-3 text-indigo-300 font-bold">${log.user}</td>
+                        <td class="py-2.5 px-3"><span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">${log.role}</span></td>
+                        <td class="py-2.5 px-3 text-slate-200">${log.action}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastContent = document.getElementById('toastContent');
+            let icon = '<i class="fa-solid fa-circle-info text-blue-400 text-base"></i>';
+            let borderColor = 'border-blue-500/30';
+
+            if (type === 'success') {
+                icon = '<i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>';
+                borderColor = 'border-emerald-500/40';
+            } else if (type === 'error') {
+                icon = '<i class="fa-solid fa-circle-exclamation text-rose-400 text-base"></i>';
+                borderColor = 'border-rose-500/40';
+            }
+
+            toastContent.className = `glass px-4 py-3 rounded-xl border ${borderColor} flex items-center gap-3 text-xs shadow-2xl text-white`;
+            toastContent.innerHTML = `${icon} <span>${message}</span>`;
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+        }
+    </script>
+</body>
+</html>
