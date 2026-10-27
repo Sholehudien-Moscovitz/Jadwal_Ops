@@ -625,43 +625,56 @@
         try {
             const data = new Uint8Array(evt.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-
-            // Ambil sheet paling kanan (terakhir) dari file Excel
+            
+            // Membaca sheet paling kanan (periode aktif terbaru)
             const lastSheetIndex = workbook.SheetNames.length - 1;
             const targetSheetName = workbook.SheetNames[lastSheetIndex];
             const worksheet = workbook.Sheets[targetSheetName];
 
             const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-            let newSummaries = [];
+            let parsedSchedules = [];
 
-            // Baris 1-13 dilewati sebagai jarak/spacer, mulai baca dari index 13 (Baris 14)
-            for (let i = 13; i < jsonData.length; i++) {
+            // Mulai membaca dari baris ke-3 (index 2) karena baris 1 adalah tanggal dan baris 2 adalah hari
+            for (let i = 2; i < jsonData.length; i++) {
                 const row = jsonData[i];
-                if (!row || !row[0]) continue; // Lewati jika kolom A kosong
+                if (!row || !row[0]) continue; // Lewati jika baris kosong / tidak ada nama di Kolom A
 
                 const employeeName = String(row[0]).trim();
-                let pagiCount = 0, middleCount = 0, siangCount = 0, liburCount = 0;
+                
+                // Lewati jika baris tersebut adalah header atau baris pemisah kosong
+                if (employeeName.toUpperCase() === 'NAMA' || employeeName === '') continue;
 
-                // Kolom B sampai seterusnya adalah tanggal periode
+                let pagiCount = 0;
+                let middleCount = 0;
+                let siangCount = 0;
+                let liburCount = 0;
+
+                // Membaca kolom tanggal (dari kolom index 1 / Kolom B sampai batas tanggal 20, misal kolom ke-32 / index 31)
+                // Kita batasi sampai kolom sebelum "JML HARI KERJA"
                 for (let j = 1; j < row.length; j++) {
                     const cellVal = String(row[j] || '').trim().toLowerCase();
 
+                    // Hentikan pembacaan tanggal jika sudah masuk ke kolom rekap (JML HARI KERJA, JML OFF, dll)
+                    if (cellVal.includes('jml') || cellVal.includes('hari kerja')) break;
+
                     if (cellVal === '' || cellVal === 'off' || cellVal === 'libur') {
                         liburCount++;
-                    } else if (cellVal.includes('08:00') || cellVal.includes('09:00') || cellVal.includes('08:00 - 17:00')) {
+                    } else if (cellVal.includes('08.00') || cellVal.includes('09.00') || cellVal.includes('08.00-17.00')) {
                         pagiCount++;
-                    } else if (cellVal.includes('10:00')) {
+                    } else if (cellVal.includes('10.00')) {
                         middleCount++;
-                    } else if (cellVal.includes('13:00') || cellVal.includes('13:30') || cellVal.includes('14:00')) {
+                    } else if (cellVal.includes('13.00') || cellVal.includes('13.30') || cellVal.includes('14.00')) {
                         siangCount++;
-                    } else {
+                    } else if (cellVal.length > 3) {
+                        // Jika terisi jam kerja lain yang valid
                         pagiCount++;
                     }
                 }
 
                 const totalMasuk = pagiCount + middleCount + siangCount;
-                newSummaries.push({
+
+                parsedSchedules.push({
                     name: employeeName,
                     masuk: totalMasuk,
                     libur: liburCount,
@@ -670,6 +683,23 @@
                     siang: siangCount
                 });
             }
+
+            scheduleSummaries = parsedSchedules;
+            localStorage.setItem('shiftsync_ops_summaries', JSON.stringify(scheduleSummaries));
+            addLog(`Import Sheet '${targetSheetName}' Berhasil (${scheduleSummaries.length} Karyawan)`);
+            showToast(`Berhasil membaca Sheet: "${targetSheetName}" (${scheduleSummaries.length} Karyawan)`, 'success');
+            
+            renderDashboard();
+            renderScheduleTable();
+            generateSQLQuery();
+            switchTab('dashboard');
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal memproses file Excel. Periksa kembali format sheet Anda!', 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
 
             scheduleSummaries = newSummaries;
             localStorage.setItem('shiftsync_ops_summaries', JSON.stringify(scheduleSummaries));
