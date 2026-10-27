@@ -30,6 +30,7 @@
     <!-- FontAwesome & SheetJS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
@@ -98,17 +99,17 @@
 
                 <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">ID Pengguna (User ID)</label>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Email</label>
                         <div class="relative">
                             <i class="fa-solid fa-user absolute left-3 top-3.5 text-slate-400 text-sm"></i>
-                            <input type="text" id="loginId" required class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm" placeholder="Contoh: Admin / Admin1 / Admin3">
+                            <input type="email" id="loginEmail" required autocomplete="username" class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm" placeholder="nama@perusahaan.com">
                         </div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">Kata Sandi (Password)</label>
                         <div class="relative">
                             <i class="fa-solid fa-lock absolute left-3 top-3.5 text-slate-400 text-sm"></i>
-                            <input type="password" id="loginPassword" required class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm" placeholder="••••••••">
+                            <input type="password" id="loginPassword" required autocomplete="current-password" class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm" placeholder="••••••••">
                         </div>
                     </div>
 
@@ -117,31 +118,6 @@
                     </button>
                 </form>
 
-                <!-- Quick Switcher for Testing -->
-                <div class="mt-6 pt-5 border-t border-slate-700/50">
-                    <p class="text-xs font-medium text-slate-400 mb-2 flex items-center justify-between">
-                        <span><i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Quick Switch Test Account:</span>
-                        <span class="text-[10px] text-slate-500">Pass: Admin12345</span>
-                    </p>
-                    <div class="grid grid-cols-2 gap-1.5 text-xs">
-                        <button onclick="quickFill('Admin')" class="p-2 glass-card hover:bg-indigo-600/20 text-left rounded-lg text-indigo-300 border border-indigo-500/20 transition flex flex-col">
-                            <span class="font-bold text-white text-[11px]">Super Admin</span>
-                            <span class="text-[10px] text-slate-400">ID: Admin (Akses Full)</span>
-                        </button>
-                        <button onclick="quickFill('Admin1')" class="p-2 glass-card hover:bg-indigo-600/20 text-left rounded-lg text-emerald-300 border border-emerald-500/20 transition flex flex-col">
-                            <span class="font-bold text-white text-[11px]">Admin Operasional 1</span>
-                            <span class="text-[10px] text-slate-400">ID: Admin1 (Edit)</span>
-                        </button>
-                        <button onclick="quickFill('Admin2')" class="p-2 glass-card hover:bg-indigo-600/20 text-left rounded-lg text-emerald-300 border border-emerald-500/20 transition flex flex-col">
-                            <span class="font-bold text-white text-[11px]">Admin Operasional 2</span>
-                            <span class="text-[10px] text-slate-400">ID: Admin2 (Edit)</span>
-                        </button>
-                        <button onclick="quickFill('Admin3')" class="p-2 glass-card hover:bg-indigo-600/20 text-left rounded-lg text-slate-300 border border-slate-500/20 transition flex flex-col">
-                            <span class="font-bold text-white text-[11px]">Viewer (Admin 3-10)</span>
-                            <span class="text-[10px] text-slate-400">ID: Admin3 (Lihat Saja)</span>
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -232,7 +208,7 @@
                                 <i class="fa-solid fa-file-excel"></i>
                             </div>
                             <h3 class="text-xl font-bold text-white">Import Template Jadwal Excel (.xlsx)</h3>
-                            <p class="text-xs text-slate-400">Sistem membaca Kolom A sebagai Nama Karyawan untuk dicocokkan dengan akun user.</p>
+                            <p class="text-xs text-slate-400">Kolom A harus cocok dengan nama karyawan yang diatur pada profil Supabase.</p>
                         </div>
 
                         <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-8 text-center bg-slate-900/40 transition cursor-pointer" onclick="document.getElementById('excelFileInput').click()">
@@ -267,16 +243,16 @@
                 <section id="view-users" class="tab-content hidden space-y-6">
                     <div class="glass p-6 rounded-2xl space-y-4">
                         <h3 class="font-bold text-lg text-white flex items-center gap-2 border-b border-slate-800 pb-4">
-                            <i class="fa-solid fa-users-gear text-amber-400"></i> Daftar 10 Akun Pengguna Sistem
+                            <i class="fa-solid fa-users-gear text-amber-400"></i> Direktori User & Karyawan
                         </h3>
                         <div class="overflow-x-auto rounded-xl border border-slate-800">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-900 text-slate-300 font-semibold border-b border-slate-800 uppercase">
                                     <tr>
-                                        <th class="py-3 px-4">User ID</th>
-                                        <th class="py-3 px-4">Nama Akun / Karyawan</th>
-                                        <th class="py-3 px-4">Kategori Role</th>
-                                        <th class="py-3 px-4">Status Akun</th>
+                                        <th class="py-3 px-4">Email Login</th>
+                                        <th class="py-3 px-4">Nama User</th>
+                                        <th class="py-3 px-4">Nama Karyawan</th>
+                                        <th class="py-3 px-4">Role</th>
                                     </tr>
                                 </thead>
                                 <tbody id="userTableBody" class="divide-y divide-slate-800"></tbody>
@@ -318,23 +294,14 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        const ACCOUNTS = [
-            { id: 'Admin', pass: 'Admin12345', name: 'Super Administrator', role: 'SUPER_ADMIN', badge: 'SUPER ADMIN' },
-            { id: 'Admin1', pass: 'Admin12345', name: 'Admin Operasional 1', role: 'ADMIN_OPS', badge: 'ADMIN 1 (EDITOR)' },
-            { id: 'Admin2', pass: 'Admin12345', name: 'Admin Operasional 2', role: 'ADMIN_OPS', badge: 'ADMIN 2 (EDITOR)' },
-            { id: 'Admin3', pass: 'Admin12345', name: 'Admin Viewer 3', role: 'VIEWER', badge: 'VIEWER 3' },
-            { id: 'Admin4', pass: 'Admin12345', name: 'Admin Viewer 4', role: 'VIEWER', badge: 'VIEWER 4' },
-            { id: 'Admin5', pass: 'Admin12345', name: 'Ahmad Sholeh Sholahudin', role: 'VIEWER', badge: 'USER / STAFF 5' },
-            { id: 'Admin6', pass: 'Admin12345', name: 'Admin Viewer 6', role: 'VIEWER', badge: 'VIEWER 6' },
-            { id: 'Admin7', pass: 'Admin12345', name: 'Admin Viewer 7', role: 'VIEWER', badge: 'VIEWER 7' },
-            { id: 'Admin8', pass: 'Admin12345', name: 'Admin Viewer 8', role: 'VIEWER', badge: 'VIEWER 8' },
-            { id: 'Admin9', pass: 'Admin12345', name: 'Admin Viewer 9', role: 'VIEWER', badge: 'VIEWER 9' },
-            { id: 'Admin10', pass: 'Admin12345', name: 'Admin Viewer 10', role: 'VIEWER', badge: 'VIEWER 10' }
-        ];
+        const SUPABASE_URL = 'https://sswmkdkwqpfuvzkpwqis.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_nQ7j19qZ-Zq1MXFRd-vPBw_rwm2a7YZ';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
         let currentUser = null;
-        let scheduleSummaries = JSON.parse(localStorage.getItem('shiftsync_ops_summaries')) || [];
-        let dailyScheduleData = JSON.parse(localStorage.getItem('shiftsync_ops_daily_schedule')) || { employees: [], entries: [] };
+        let scheduleSummaries = [];
+        let dailyScheduleData = { employees: [], entries: [] };
+        let directoryProfiles = [];
         let systemLogs = JSON.parse(localStorage.getItem('shiftsync_ops_logs')) || [
             { time: new Date().toLocaleString('id-ID'), user: 'System', action: 'Inisialisasi Sistem' }
         ];
@@ -354,55 +321,72 @@
             }, 1000);
         }
 
-        function quickFill(userId) {
-            document.getElementById('loginId').value = userId;
-            document.getElementById('loginPassword').value = 'Admin12345';
-        }
-
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
-            const idInput = document.getElementById('loginId').value.trim();
-            const passInput = document.getElementById('loginPassword').value.trim();
-            const foundUser = ACCOUNTS.find(acc => acc.id.toLowerCase() === idInput.toLowerCase() && acc.pass === passInput);
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                showToast('Email atau kata sandi tidak valid.', 'error');
+                return;
+            }
+            await checkSession();
+        }
 
-            if (foundUser) {
-                currentUser = foundUser;
-                localStorage.setItem('shiftsync_ops_session', JSON.stringify(currentUser));
-                addLog(`Login Berhasil`);
-                showToast(`Selamat Datang, ${currentUser.name}`, 'success');
-                initUserInterface();
-            } else {
-                showToast('ID Pengguna atau Password Salah!', 'error');
+        async function checkSession() {
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            if (error || !session) {
+                showLoginView();
+                return;
+            }
+            try {
+                await initUserInterface(session.user);
+            } catch (loadError) {
+                console.error(loadError);
+                await supabaseClient.auth.signOut();
+                currentUser = null;
+                showLoginView();
+                showToast('Tidak dapat memuat data Supabase. Periksa skema dan koneksi.', 'error');
             }
         }
 
-        function checkSession() {
-            const session = localStorage.getItem('shiftsync_ops_session');
-            if (session) {
-                currentUser = JSON.parse(session);
-                initUserInterface();
-            } else {
-                document.getElementById('loginView').classList.remove('hidden');
-                document.getElementById('mainLayout').classList.add('hidden');
-            }
-        }
-
-        function logout() {
-            if (currentUser) addLog('Logout');
-            currentUser = null;
-            localStorage.removeItem('shiftsync_ops_session');
+        function showLoginView() {
             document.getElementById('loginView').classList.remove('hidden');
             document.getElementById('mainLayout').classList.add('hidden');
+        }
+
+        async function logout() {
+            if (currentUser) addLog('Logout');
+            currentUser = null;
+            await supabaseClient.auth.signOut();
+            showLoginView();
             showToast('Berhasil keluar sistem', 'info');
         }
 
-        function initUserInterface() {
+        async function initUserInterface(authUser) {
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('user_id, login_name, display_name, employee_name, role')
+                .eq('user_id', authUser.id)
+                .single();
+
+            if (error || !profile) {
+                await supabaseClient.auth.signOut();
+                currentUser = null;
+                showLoginView();
+                showToast('Profil belum disiapkan di Supabase. Hubungi administrator.', 'error');
+                return;
+            }
+
+            currentUser = { ...profile, email: authUser.email, id: authUser.id };
             document.getElementById('loginView').classList.add('hidden');
             document.getElementById('mainLayout').classList.remove('hidden');
-            document.getElementById('userBadgeName').innerText = currentUser.name;
-            document.getElementById('userBadgeRole').innerText = currentUser.badge;
+            document.getElementById('userBadgeName').innerText = currentUser.display_name;
+            document.getElementById('userBadgeRole').innerText = currentUser.role;
 
             applyRBACPermissions();
+            await loadRemoteSchedules();
+            await loadDirectoryProfiles();
             renderScheduleTable();
             renderUsersTable();
             renderLogsTable();
@@ -419,6 +403,65 @@
             });
             const tabExcel = document.getElementById('tab-excel');
             if (tabExcel) tabExcel.style.display = isEditor ? 'flex' : 'none';
+        }
+
+        async function loadDirectoryProfiles() {
+            if (currentUser.role !== 'SUPER_ADMIN') {
+                directoryProfiles = [];
+                return;
+            }
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('login_name, display_name, employee_name, role')
+                .order('display_name');
+            if (error) throw error;
+            directoryProfiles = data || [];
+        }
+
+        async function loadRemoteSchedules() {
+            const { data, error } = await supabaseClient
+                .from('work_schedules')
+                .select('employee_name, work_date, shift_name, start_time, end_time')
+                .order('work_date')
+                .order('employee_name');
+            if (error) throw error;
+
+            const toMinutes = value => {
+                if (!value) return null;
+                const [hours, minutes] = value.split(':').map(Number);
+                return hours * 60 + minutes;
+            };
+            const toTimeLabel = value => value ? value.slice(0, 5) : '';
+            const entries = (data || []).map(row => ({
+                name: row.employee_name,
+                date: row.work_date,
+                shift: ['Pagi', 'Middle', 'Siang'].includes(row.shift_name) ? row.shift_name : null,
+                off: row.shift_name === 'OFF',
+                unassigned: row.shift_name === 'UNASSIGNED',
+                start: toMinutes(row.start_time),
+                end: toMinutes(row.end_time),
+                startText: toTimeLabel(row.start_time),
+                endText: toTimeLabel(row.end_time)
+            }));
+            dailyScheduleData = {
+                employees: [...new Set(entries.map(entry => entry.name))],
+                entries
+            };
+
+            const totalsByEmployee = new Map(dailyScheduleData.employees.map(name => [name, {
+                name, masuk: 0, libur: 0, pagi: 0, middle: 0, siang: 0
+            }]));
+            entries.forEach(entry => {
+                const summary = totalsByEmployee.get(entry.name);
+                if (entry.off) summary.libur++;
+                else if (!entry.unassigned) {
+                    summary.masuk++;
+                    if (entry.shift === 'Pagi') summary.pagi++;
+                    if (entry.shift === 'Middle') summary.middle++;
+                    if (entry.shift === 'Siang') summary.siang++;
+                }
+            });
+            scheduleSummaries = [...totalsByEmployee.values()];
         }
 
         function switchTab(tabId) {
@@ -501,7 +544,8 @@
 
             tbody.innerHTML = employees.map(name => {
                 const normalizedName = name.toLowerCase();
-                const isMyData = currentUser && [currentUser.name, currentUser.id].some(identity => {
+                const isMyData = currentUser && [currentUser.employee_name, currentUser.display_name, currentUser.login_name].some(identity => {
+                    if (!identity) return false;
                     const normalizedIdentity = identity.toLowerCase();
                     return normalizedName.includes(normalizedIdentity) || normalizedIdentity.includes(normalizedName);
                 });
@@ -694,9 +738,13 @@
         function handleExcelUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
+            if (!['SUPER_ADMIN', 'ADMIN_OPS'].includes(currentUser.role)) {
+                showToast('Role Anda hanya dapat melihat jadwal.', 'error');
+                return;
+            }
 
             const reader = new FileReader();
-            reader.onload = function(evt) {
+            reader.onload = async function(evt) {
                 try {
                     const data = new Uint8Array(evt.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
@@ -707,22 +755,16 @@
 
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     dailyScheduleData = parseDailySchedule(jsonData);
-                    const totalsByEmployee = new Map(dailyScheduleData.employees.map(name => [name, {
-                        name, masuk: 0, libur: 0, pagi: 0, middle: 0, siang: 0
-                    }]));
-                    dailyScheduleData.entries.forEach(entry => {
-                        const summary = totalsByEmployee.get(entry.name);
-                        if (entry.off) summary.libur++;
-                        else if (!entry.unassigned) {
-                            summary.masuk++;
-                            if (entry.shift === 'Pagi') summary.pagi++;
-                            if (entry.shift === 'Middle') summary.middle++;
-                            if (entry.shift === 'Siang') summary.siang++;
-                        }
-                    });
-                    scheduleSummaries = [...totalsByEmployee.values()];
-                    localStorage.setItem('shiftsync_ops_daily_schedule', JSON.stringify(dailyScheduleData));
-                    localStorage.setItem('shiftsync_ops_summaries', JSON.stringify(scheduleSummaries));
+                    const entries = dailyScheduleData.entries.map(entry => ({
+                        employee_name: entry.name,
+                        work_date: entry.date,
+                        shift_name: entry.off ? 'OFF' : entry.unassigned ? 'UNASSIGNED' : entry.shift,
+                        start_time: entry.startText || null,
+                        end_time: entry.endText || null
+                    }));
+                    const { error } = await supabaseClient.rpc('replace_work_schedules', { p_entries: entries });
+                    if (error) throw error;
+                    await loadRemoteSchedules();
                     addLog(`Import Sheet '${targetSheetName}' Berhasil (${scheduleSummaries.length} Karyawan)`);
                     showToast(`Berhasil membaca Sheet: "${targetSheetName}" (${scheduleSummaries.length} Karyawan)`, 'success');
                     
@@ -757,13 +799,17 @@
         function renderUsersTable() {
             const tbody = document.getElementById('userTableBody');
             tbody.innerHTML = '';
-            ACCOUNTS.forEach(acc => {
+            if (directoryProfiles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-400">Belum ada profil pengguna di Supabase.</td></tr>';
+                return;
+            }
+            directoryProfiles.forEach(profile => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-800/40 transition">
-                        <td class="py-3 px-4 font-mono font-bold text-white">${acc.id}</td>
-                        <td class="py-3 px-4 text-slate-200">${acc.name}</td>
-                        <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[11px] bg-indigo-500/20 text-indigo-300">${acc.badge}</span></td>
-                        <td class="py-3 px-4"><span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Aktif</span></td>
+                        <td class="py-3 px-4 font-mono font-bold text-white">${escapeHTML(profile.login_name)}</td>
+                        <td class="py-3 px-4 text-slate-200">${escapeHTML(profile.display_name)}</td>
+                        <td class="py-3 px-4 text-slate-200">${escapeHTML(profile.employee_name || '-')}</td>
+                        <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[11px] bg-indigo-500/20 text-indigo-300">${escapeHTML(profile.role)}</span></td>
                     </tr>
                 `;
             });
