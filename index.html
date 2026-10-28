@@ -272,7 +272,7 @@
                                 <thead class="text-slate-400 border-b border-slate-800">
                                     <tr>
                                         <th class="py-2.5 px-3">Waktu Log</th>
-                                        <th class="py-2.5 px-3">User ID</th>
+                                        <th class="py-2.5 px-3">Nama User</th>
                                         <th class="py-2.5 px-3">Aktivitas</th>
                                     </tr>
                                 </thead>
@@ -303,9 +303,7 @@
         let scheduleSummaries = [];
         let dailyScheduleData = { employees: [], entries: [] };
         let directoryProfiles = [];
-        let systemLogs = JSON.parse(localStorage.getItem('shiftsync_ops_logs')) || [
-            { time: new Date().toLocaleString('id-ID'), user: 'System', action: 'Inisialisasi Sistem' }
-        ];
+        let systemLogs = [];
 
         window.onload = function() {
             startClock();
@@ -337,6 +335,7 @@
                 return;
             }
             await checkSession();
+            if (currentUser) await addLog('Login');
         }
 
         async function checkSession() {
@@ -362,7 +361,7 @@
         }
 
         async function logout() {
-            if (currentUser) addLog('Logout');
+            if (currentUser) await addLog('Logout');
             currentUser = null;
             await supabaseClient.auth.signOut();
             showLoginView();
@@ -395,7 +394,7 @@
             await loadDirectoryProfiles();
             renderScheduleTable();
             renderUsersTable();
-            renderLogsTable();
+            await loadAuditLogs();
             generateSQLQuery();
             switchTab('schedule');
         }
@@ -821,15 +820,30 @@
             });
         }
 
-        function addLog(action) {
-            const logEntry = {
-                time: new Date().toLocaleTimeString('id-ID') + ' - ' + new Date().toLocaleDateString('id-ID'),
-                user: currentUser ? currentUser.id : 'System',
-                action: action
-            };
-            systemLogs.unshift(logEntry);
-            if (systemLogs.length > 50) systemLogs.pop();
-            localStorage.setItem('shiftsync_ops_logs', JSON.stringify(systemLogs));
+        async function addLog(action) {
+            if (!currentUser) return;
+            const { error } = await supabaseClient.rpc('record_auth_audit', { p_action: action });
+            if (error) {
+                console.error('Gagal mencatat audit autentikasi:', error);
+                showToast('Aktivitas login/logout gagal dicatat.', 'error');
+                return;
+            }
+            await loadAuditLogs();
+        }
+
+        async function loadAuditLogs() {
+            if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
+                systemLogs = [];
+                renderLogsTable();
+                return;
+            }
+            const { data, error } = await supabaseClient
+                .from('system_audit_logs')
+                .select('user_name, action, created_at')
+                .order('created_at', { ascending: false })
+                .limit(50);
+            if (error) throw error;
+            systemLogs = data || [];
             renderLogsTable();
         }
 
@@ -837,12 +851,16 @@
             const tbody = document.getElementById('logTableBody');
             if (!tbody) return;
             tbody.innerHTML = '';
+            if (systemLogs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-slate-400">Belum ada aktivitas login/logout.</td></tr>';
+                return;
+            }
             systemLogs.forEach(log => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-800/30 transition">
-                        <td class="py-2.5 px-3 text-slate-400">${log.time}</td>
-                        <td class="py-2.5 px-3 text-indigo-300 font-bold">${log.user}</td>
-                        <td class="py-2.5 px-3 text-slate-200">${log.action}</td>
+                        <td class="py-2.5 px-3 text-slate-400">${escapeHTML(new Date(log.created_at).toLocaleString('id-ID'))}</td>
+                        <td class="py-2.5 px-3 text-indigo-300 font-bold">${escapeHTML(log.user_name)}</td>
+                        <td class="py-2.5 px-3 text-slate-200">${escapeHTML(log.action)}</td>
                     </tr>
                 `;
             });

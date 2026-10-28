@@ -26,6 +26,14 @@ create table if not exists public.work_schedules (
     )
 );
 
+create table if not exists public.system_audit_logs (
+    id bigint generated always as identity primary key,
+    user_id uuid references auth.users (id) on delete set null,
+    user_name text not null,
+    action text not null check (action in ('Login', 'Logout')),
+    created_at timestamptz not null default now()
+);
+
 create or replace function public.current_app_role()
 returns text
 language sql
@@ -41,6 +49,7 @@ grant execute on function public.current_app_role() to authenticated;
 
 alter table public.profiles enable row level security;
 alter table public.work_schedules enable row level security;
+alter table public.system_audit_logs enable row level security;
 
 drop policy if exists "Authenticated users can view profiles" on public.profiles;
 drop policy if exists "Users view own profile" on public.profiles;
@@ -62,9 +71,44 @@ create policy "Admins manage schedules"
     using (public.current_app_role() in ('SUPER_ADMIN', 'ADMIN_OPS'))
     with check (public.current_app_role() in ('SUPER_ADMIN', 'ADMIN_OPS'));
 
+drop policy if exists "Super admin views audit logs" on public.system_audit_logs;
+create policy "Super admin views audit logs"
+    on public.system_audit_logs for select to authenticated
+    using (public.current_app_role() = 'SUPER_ADMIN');
+
 revoke insert, update, delete on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
+grant select on public.system_audit_logs to authenticated;
 grant select, insert, update, delete on public.work_schedules to authenticated;
+
+create or replace function public.record_auth_audit(p_action text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    v_user_name text;
+begin
+    if p_action not in ('Login', 'Logout') then
+        raise exception 'Unsupported authentication audit action';
+    end if;
+
+    select display_name into v_user_name
+    from public.profiles
+    where user_id = auth.uid();
+
+    if v_user_name is null then
+        raise exception 'Authenticated user profile not found';
+    end if;
+
+    insert into public.system_audit_logs (user_id, user_name, action)
+    values (auth.uid(), v_user_name, p_action);
+end;
+$$;
+
+revoke all on function public.record_auth_audit(text) from public;
+grant execute on function public.record_auth_audit(text) to authenticated;
 
 create or replace function public.replace_work_schedules(p_entries jsonb)
 returns void
